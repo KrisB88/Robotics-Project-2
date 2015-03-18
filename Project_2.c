@@ -29,7 +29,7 @@ int active_process = 0;*/
 //declaring motor speeds
 int MOTOR_MAX = 50;
 int MOTOR_MIN = -50;
-
+bool wall=false;
 
 
 /*BASIC FUNCTIONS-------------------------------------------------------------------- */
@@ -37,7 +37,9 @@ int MOTOR_MIN = -50;
 void Forward( int length)
 {
 	nSyncedMotors=synchAB;
-	while(nMotorEncoder[leftMotor]<length){ //set to slaves later
+	//nxtDisplayCenteredTextLine(0, "%d",(nMotorEncoder[leftMotor]));
+	//wait10Msec(10000);
+	while(nMotorEncoder[leftMotor]< length){ //set to slaves later
 	motor[rightMotor] = MOTOR_MAX;
 	motor[leftMotor] = MOTOR_MAX;
 }
@@ -51,21 +53,25 @@ void Forward( )
 
 }
 //this moves the robot to the left
-void Left( int length)
+void Left( int length, int turnRadians)
 {
 	nSyncedMotors=synchAB;
+	nSyncedTurnRatio= turnRadians
+	//	nxtDisplayCenteredTextLine(0, "%d",(nMotorEncoder[leftMotor]));
+	//wait10Msec(10000);
 	while(nMotorEncoder[leftMotor]<length){
-	motor[rightMotor] = MOTOR_MIN;
+	//motor[rightMotor] = MOTOR_MIN;
 	motor[leftMotor] = MOTOR_MAX;
 }
 }
 //this moves the robot right
-void Right( int length)
+void Right( int length, int turnRadians)
 {
 	nSyncedMotors=synchAB;
+	nSyncedTurnRatio= turnRadians;
 	while(nMotorEncoder[leftMotor]<length){
 	motor[rightMotor] = MOTOR_MAX;
-	motor[leftMotor] = MOTOR_MIN;
+	//motor[leftMotor] = MOTOR_MIN;
 }
 }
 //this moves the robot backwards
@@ -131,39 +137,45 @@ task Wander()
 {
 	//add in a loop for timer to make the robot stop program after a certain amount of time (nothing is found)
 	ClearTimer(T1);
-	while(time10[T1] < 12000);//2 minutes
+	//time10[T1] < 120000
+	while(time10[T1] < 120000 && wall== false)//2 minutes
 	{
-		switch(random(8)){ //goes in one of the 8 directions
+		//nMotorEncoder[leftMotor]=0; //not sure if need to reset periodically
+		//nMotorEncoder[rightMotor]=0;
+		int decision =random(3);
+		switch(decision){ //goes in one of the 8 directions
 			case 0:
-				Forward(random(50)+25);
+				Forward(random(500)+250);
 			break;
 			case 1:
-				Left(random(50)+25);
+				Left(random(500) + 250, 45); //pass two arguments, the length of distance traveled and the turn radius
 			break;
 			case 2:
-				Right(random(50)+25);
+				Right(random(500) + 250, 45);
 			break;
-			case 3:
-				Backwards(random(50)+25);
+	/*		case 3:
+				Backwards(random(500) + 250);
 			break;
 			case 4:
-				Forward(random(50)+25);
-				Left(random(50)+25);
+				Forward(random(500) + 250);
+				Left(random(500) + 250);
 			break;
 			case 5:
-				Forward(random(50)+25);
-				Right(random(50)+25);
+				Forward(random(500) + 250);
+				Right(random(500) + 250);
 			break;
 			case 6:
-				Backwards(random(50)+25);
-				Left(random(50)+25);
+				Backwards(random(500) + 250);
+				Left(random(500) + 250);
 			break;
 			case 7:
-				Backwards(random(50)+25);
-				Right(random(50)+25);
-			break;
+				Backwards(random(500) + 250);
+				Right(random(500) + 250);
+				break;
+*/
 			default:
 			nxtDisplayStringAt(0, 31, "error with random number generator");
+			wait10Msec(1000);
 			break;
 
 	}
@@ -209,20 +221,29 @@ task PushEggIntoNest()
 //how do we tell the wall is different from the eggs?
 task DetectWall()
 {
-	while( left_touch() && right_touch()){
-		Forward(100);
-	}
-		Backwards(75);
-		wait10Msec(100);
+	while( !left_touch() && !right_touch()); //while this isn't detected, do nothing
+
+		wall= true;
+		Halt();//when detected stop
+		wait10Msec(100);// wait
+		Backwards(750); //then backwards
+		Right(250, 45);// turn to get out of the way
+
 }
 
 //this is where all the functions are called
 task main()
 {
-//int lightValue;
-	int tapeValue;
 	int nestValue;
-	int fieldValue;
+	//initialize because junk values are a thing
+	nMotorEncoder[leftMotor]=0;
+	nMotorEncoder[rightMotor]=0;
+	nMotorEncoder[clawMotor]=0;
+	//Forward(1000); //for debugging
+	//Right(500, 45); //for debugging
+	//StartTask(Wander);
+	//StartTask(DetectWall);
+	//while(true);
 //getting values of the tape, nest and field
 	while(SensorValue(touchLeft) == 0)
 	{
@@ -230,7 +251,7 @@ task main()
 	}
 	nestValue=SensorValue(lightSensor);
 	wait1Msec(1000);
-
+/*
 	while(SensorValue(touchLeft) == 0)
 	{
 		nxtDisplayStringAt(0, 31, "Read Tape Value Now");
@@ -241,7 +262,8 @@ task main()
 	{
 		nxtDisplayStringAt(0, 31, "Read Field Value Now");
 	}
-	fieldValue = SensorValue(lightSensor);
+	*/
+	//fieldValue = SensorValue(lightSensor);
 	//CompassReading= SensorValue();
 	//touch twice to turn on
 	//use compass to set home location
