@@ -1,4 +1,4 @@
-#pragma config(Sensor, S1,     touchLeft,      sensorTouch)
+#pragma config(Sensor, S1,     smux,           sensorHiTechnicTouchMux)
 #pragma config(Sensor, S2,     touchRight,     sensorTouch)
 #pragma config(Sensor, S3,     ultrasonicSensor, sensorSONAR)
 #pragma config(Sensor, S4,     lightSensor,    sensorLightActive)
@@ -22,23 +22,55 @@ Due: 03/23/15
 
 int num_process = 0;
 int active_process = 0;*/
+#define HTSMUX_CMD_HALT 0x00
+#define HTSMUX_CMD_AUTODETECT 0x01
+#define HTSMUX_CMD_RUN 0x02
 
+typedef struct {
+	ubyte arr[16];
 
-
-
+}byte_array;
 //declaring motor speeds
 int MOTOR_MAX = 50;
 int MOTOR_MIN = -50;
 bool wall=false;
+bool egg= false;
+int compassReading;
+int nestValue;
 
+void HTSMUXsendCmd (tSensors smux, byte cmd) {
+	ubyte sendMsg [4];
+
+	sendMsg[0] = 3;
+	sendMsg[1] = 0x10;
+	sendMsg[2] = 0x20;
+	sendMsg[3] = cmd;
+	//sendI2CMsg(nPort, pSendMsg, nReplySize);
+	//**Error**:Expression does not fit parameter. Call to 'sendI2CMsg'. Parameter: 'char * pSendMsg' is 'sendMsg' of type 'ubyte [4]'.
+	sendI2CMsg(smux, (char *)sendMsg, 0);
+
+
+}
+
+void HTSMUXreadI2C (tSensors smux, byte chan, byte offset, byte length,	byte_array &array){
+
+	ubyte sendMsg[3];
+
+	sendMsg[0] = 2;
+	sendMsg[1] = 0x10;
+	sendMsg[2] = 0x40 + (chan * 16) + offset;
+	//*Error**:Expression does not fit parameter. Call to 'sendI2CMsg'. Parameter: 'char * pSendMsg' is 'sendMsg' of type 'ubyte [3]'.
+	sendI2CMsg(smux, (char* )sendMsg, length);
+	wait1Msec(10);
+	//**Error**:Expression does not fit parameter. Call to 'readI2CReply'. Parameter: 'char * pReplyBytes' is 'array.arr[0]' of type 'ubyte [16]'.
+	readI2CReply(smux, (char* ) array.arr[0], length);
+}
 
 /*BASIC FUNCTIONS-------------------------------------------------------------------- */
 //this moves the robot forwards
 void Forward( int length)
 {
 	nSyncedMotors=synchAB;
-	//nxtDisplayCenteredTextLine(0, "%d",(nMotorEncoder[leftMotor]));
-	//wait10Msec(10000);
 	while(nMotorEncoder[leftMotor]< length){ //set to slaves later
 	motor[rightMotor] = MOTOR_MAX;
 	motor[leftMotor] = MOTOR_MAX;
@@ -46,17 +78,14 @@ void Forward( int length)
 }
 void Forward( )
 {
-
-
 	motor[rightMotor] = MOTOR_MAX;
 	motor[leftMotor] = MOTOR_MAX;
-
 }
 //this moves the robot to the left
 void Left( int length, int turnRadians)
 {
-	nSyncedMotors=synchAB;
-	nSyncedTurnRatio= turnRadians
+	nSyncedMotors=synchBA;
+	nSyncedTurnRatio= turnRadians;
 	//	nxtDisplayCenteredTextLine(0, "%d",(nMotorEncoder[leftMotor]));
 	//wait10Msec(10000);
 	while(nMotorEncoder[leftMotor]<length){
@@ -89,12 +118,21 @@ void Halt()
 	motor[rightMotor] = 0;
 	motor[leftMotor] = 0;
 }
-
+void raiseArm(){
+	while(nMotorEncoder[clawMotor] <500){ //setting it to arbitrary value until can make an angle based assumption
+	motor[clawMotor]= MOTOR_MAX;
+}
+}
+void lowerArm(){
+	while(nMotorEncoder[clawMotor] <500){ //setting it to arbitrary value until can make an angle based assumption
+	motor[clawMotor]= MOTOR_MIN;
+}
+}
 
 /*SENSOR FUNCTIONS----------------------------------------------------------------------*/
 bool left_touch()
 {
-	return	SensorValue(touchLeft)==0;
+//	return	SensorValue(touchLeft)==0;
 	//return /*DigitalPinValue???*/ digital(LEFT_TOUCH_PORT);
 }
 
@@ -211,9 +249,22 @@ task PushEggTowardsNest()
 }
 //this will makes the robot push the egg into the nest(blue zone)
 //will be using the LIGHT_SENSOR to detect the colors of the nest and line to it
-task PushEggIntoNest()
+task detectOutOfBounds()
 {
+	if(SensorValue(lightSensor)== nestValue){
+		if( egg ==false){				//might logically shortcut it later
+		nSyncedMotors=synchAB;
+		nSyncedTurnRatio=  90; // try to do a full 180 turn at a sharp angle to reduce time
+		while((compassReading + 180) %360 == SensorValue(compassSensor)){
+			motor[rightMotor] = MOTOR_MAX;
+			}
+		}
+		else{ // we have the egg
+			Forward(300);
 
+			Right(100, 45);
+		}
+	}
 }
 
 //this will detect a wall
@@ -234,7 +285,10 @@ task DetectWall()
 //this is where all the functions are called
 task main()
 {
-	int nestValue;
+	 HTSMUXsendCmd(S1, HTSMUX_CMD_AUTODETECT);
+ // Start normal operation
+	 HTSMUXsendCmd(S1, HTSMUX_CMD_RUN);
+
 	//initialize because junk values are a thing
 	nMotorEncoder[leftMotor]=0;
 	nMotorEncoder[rightMotor]=0;
@@ -275,6 +329,12 @@ task main()
 
 
 	//}
-
+ while (true) {
+ // Read a single byte from the I2C
+ // buffer for channel 0 (SMUX port 1)
+ 		HTSMUXreadI2C(S1, 0, 0, 1, data);
+		nxtDisplayTextLine(2, "%d", data.arr[0]);
+ 		wait1Msec(100);
+ }
 
 }
