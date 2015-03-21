@@ -1,7 +1,5 @@
-#pragma config(Sensor, S1,     smux,           sensorHiTechnicTouchMux)
-#pragma config(Sensor, S2,     touchRight,     sensorTouch)
-#pragma config(Sensor, S3,     ultrasonicSensor, sensorSONAR)
-#pragma config(Sensor, S4,     lightSensor,    sensorLightActive)
+#pragma config(Sensor, S1,     HTSMUX,         sensorI2CCustom)
+#pragma config(Sensor, S2,     compassSensor,  sensorI2CCustom)
 #pragma config(Motor,  motorA,          rightMotor,    tmotorNXT, PIDControl, encoder)
 #pragma config(Motor,  motorB,          leftMotor,     tmotorNXT, PIDControl, encoder)
 #pragma config(Motor,  motorC,          clawMotor,     tmotorNXT, PIDControl, encoder)
@@ -15,21 +13,21 @@ Project 2: Part 1
 Due: 03/23/15
 */
 
-//setting up the enabler, the priority process, active process, name, and num process
-/* int process_priority[10];
- int process_enable[10];
- char process_name[10][20];
+// Include drivers for multiplexer and light sensor
+#include "drivers/hitechnic-sensormux.h"
+#include "drivers/lego-ultrasound.h"
+#include "drivers/lego-light.h"
+#include "drivers/lego-touch.h"
+#include "drivers/hitechnic-compass.h"
 
-int num_process = 0;
-int active_process = 0;*/
-#define HTSMUX_CMD_HALT 0x00
-#define HTSMUX_CMD_AUTODETECT 0x01
-#define HTSMUX_CMD_RUN 0x02
+// Define easy names for sensors connected to multiplexer
+const tMUXSensor lightSensor = msensor_S1_4;	//Light sensor in smux port 4
+const tMUXSensor  touchRight= msensor_S1_2;	//Touch right smux port 3
+const tMUXSensor  touchLeft = msensor_S1_3; //Touch left smux port 2
+const tMUXSensor ultrasonicSensor = msensor_S1_1; // Ultrasonic smux port 1
 
-typedef struct {
-	ubyte arr[16];
 
-}byte_array;
+
 //declaring motor speeds
 int MOTOR_MAX = 50;
 int MOTOR_MIN = -50;
@@ -38,33 +36,8 @@ bool egg= false;
 int compassReading;
 int nestValue;
 
-void HTSMUXsendCmd (tSensors smux, byte cmd) {
-	ubyte sendMsg [4];
-
-	sendMsg[0] = 3;
-	sendMsg[1] = 0x10;
-	sendMsg[2] = 0x20;
-	sendMsg[3] = cmd;
-	//sendI2CMsg(nPort, pSendMsg, nReplySize);
-	//**Error**:Expression does not fit parameter. Call to 'sendI2CMsg'. Parameter: 'char * pSendMsg' is 'sendMsg' of type 'ubyte [4]'.
-	sendI2CMsg(smux, (char *)sendMsg, 0);
 
 
-}
-
-void HTSMUXreadI2C (tSensors smux, byte chan, byte offset, byte length,	byte_array &array){
-
-	ubyte sendMsg[3];
-
-	sendMsg[0] = 2;
-	sendMsg[1] = 0x10;
-	sendMsg[2] = 0x40 + (chan * 16) + offset;
-	//*Error**:Expression does not fit parameter. Call to 'sendI2CMsg'. Parameter: 'char * pSendMsg' is 'sendMsg' of type 'ubyte [3]'.
-	sendI2CMsg(smux, (char* )sendMsg, length);
-	wait1Msec(10);
-	//**Error**:Expression does not fit parameter. Call to 'readI2CReply'. Parameter: 'char * pReplyBytes' is 'array.arr[0]' of type 'ubyte [16]'.
-	readI2CReply(smux, (char* ) array.arr[0], length);
-}
 
 /*BASIC FUNCTIONS-------------------------------------------------------------------- */
 //this moves the robot forwards
@@ -272,7 +245,7 @@ task detectOutOfBounds()
 //how do we tell the wall is different from the eggs?
 task DetectWall()
 {
-	while( !left_touch() && !right_touch()); //while this isn't detected, do nothing
+	while( !left_touch() && !right_touch()) //while this isn't detected, do nothing
 
 		wall= true;
 		Halt();//when detected stop
@@ -285,56 +258,148 @@ task DetectWall()
 //this is where all the functions are called
 task main()
 {
-	 HTSMUXsendCmd(S1, HTSMUX_CMD_AUTODETECT);
- // Start normal operation
-	 HTSMUXsendCmd(S1, HTSMUX_CMD_RUN);
 
 	//initialize because junk values are a thing
 	nMotorEncoder[leftMotor]=0;
 	nMotorEncoder[rightMotor]=0;
 	nMotorEncoder[clawMotor]=0;
-	//Forward(1000); //for debugging
-	//Right(500, 45); //for debugging
-	//StartTask(Wander);
-	//StartTask(DetectWall);
-	//while(true);
-//getting values of the tape, nest and field
-	while(SensorValue(touchLeft) == 0)
-	{
-		nxtDisplayStringAt(0, 31, "Read Nest Value Now");
-	}
-	nestValue=SensorValue(lightSensor);
-	wait1Msec(1000);
-/*
-	while(SensorValue(touchLeft) == 0)
-	{
-		nxtDisplayStringAt(0, 31, "Read Tape Value Now");
-	}
-	tapeValue = SensorValue(lightSensor);
+ /*************************************
+ 			Light Sensor Test
+ ***************************************
+int raw = 0;
+  int nrm = 0;
+  bool active = true;
 
-	while(SensorValue(touchLeft) == 0)
-	{
-		nxtDisplayStringAt(0, 31, "Read Field Value Now");
-	}
-	*/
-	//fieldValue = SensorValue(lightSensor);
-	//CompassReading= SensorValue();
-	//touch twice to turn on
-	//use compass to set home location
-	//
+  // Turn the light on
+  LSsetActive(lightSensor);
+  wait1Msec(2000);
+  //LSsetInactive(lightSensor);
 
 
-	//while(true)
-	//{
+  nNxtButtonTask  = -1;
+
+  nxtDisplayCenteredTextLine(0, "Lego");
+  nxtDisplayCenteredBigTextLine(1, "Sonar");
+  nxtDisplayCenteredTextLine(3, "SMUX Test");
+  nxtDisplayCenteredTextLine(5, "Connect SMUX to");
+  nxtDisplayCenteredTextLine(6, "S1 and sensor to");
+  nxtDisplayCenteredTextLine(7, "SMUX Port 1");
+  wait1Msec(2000);
+
+  nxtDisplayClearTextLine(7);
+  nxtDisplayTextLine(5, "Press [enter]");
+  nxtDisplayTextLine(6, "to toggle light");
+  wait1Msec(2000);
+
+  while (nNxtButtonPressed != 3) {
+    // The enter button has been pressed, switch
+    // to the other mode
+    nxtDisplayClearTextLine(5);
+    nxtDisplayClearTextLine(6);
+    raw = LSvalRaw(lightSenso);
+    nrm = LSvalNorm(lightSensor);
+    nxtDisplayTextLine(5, "Raw:  %4d", raw);
+    nxtDisplayTextLine(6, "Norm: %4d", nrm);
+    wait1Msec(2000);
+    }
+    */
+
+ /*************************************
+ 			Ultrason Sensor Test
+ ***************************************
+    int dist = 0;
+
+  nxtDisplayCenteredTextLine(0, "Lego");
+  nxtDisplayCenteredBigTextLine(1, "US");
+  nxtDisplayCenteredTextLine(3, "SMUX Test");
+  nxtDisplayCenteredTextLine(5, "Connect SMUX to");
+  nxtDisplayCenteredTextLine(6, "S1 and US sensor");
+  nxtDisplayCenteredTextLine(7, "to SMUX Port 1");
+  wait1Msec(2000);
+
+  eraseDisplay();
+  nxtDisplayTextLine(0, "Lego US Sensor");
+
+  while(true) {
+    // Read the current distance detected.
+    dist = USreadDist(ultrasonicSensor);
+
+    // display the info from the sensor
+    nxtDisplayTextLine(3, "Dist:  %3d cm", dist);
+    wait10Msec(50);
+  }
+  */
+
+  /*************************************
+ 			Compass Sensor Test
+ ***************************************
 
 
-	//}
- while (true) {
- // Read a single byte from the I2C
- // buffer for channel 0 (SMUX port 1)
- 		HTSMUXreadI2C(S1, 0, 0, 1, data);
-		nxtDisplayTextLine(2, "%d", data.arr[0]);
- 		wait1Msec(100);
- }
+  int _target = 0;
 
-}
+  nxtDisplayCenteredTextLine(0, "HiTechnic");
+  nxtDisplayCenteredBigTextLine(1, "Compass");
+  nxtDisplayCenteredTextLine(3, "Test 1");
+  nxtDisplayTextLine(5, "Press enter");
+  nxtDisplayTextLine(6, "to set target");
+
+  wait1Msec(2000);
+  eraseDisplay();
+  time1[T1] = 0;
+  while(true) {
+    // Reset the target no more than once a second
+    // This also helps with debouncing the [enter] button.
+    if (time1[T1] > 1000) {
+      eraseDisplay();
+      nxtDisplayTextLine(1, "Changing");
+      nxtDisplayTextLine(2, "target");
+      wait1Msec(500);
+      // Set the current heading as the value for the offset to be used as the
+      // new zero-point for the relative heading returned by
+      // HTMCreadRelativeHeading()
+      _target = HTMCsetTarget(compassSensor);
+      PlaySound(soundBlip);
+      while(bSoundActive) EndTimeSlice();
+      time1[T1] = 0;
+    }
+
+    // Get the true heading and relative heading from the sensor and
+    // display them on the screen.
+    while(nNxtButtonPressed != kEnterButton) {
+      eraseDisplay();
+      nxtDisplayTextLine(1, "Reading");
+      nxtDisplayTextLine(2, "Target: %4d", _target);
+      nxtDisplayTextLine(4, "Abs:   %4d", HTMCreadHeading(compassSensor));
+      nxtDisplayTextLine(5, "Rel:   %4d", HTMCreadRelativeHeading(compassSensor));
+      nxtDisplayTextLine(6, "Press enter");
+      nxtDisplayTextLine(7, "to set target");
+      wait1Msec(100);
+    }
+  }
+  */
+
+  /*************************************
+ 			Touch Sensor Test
+ ***************************************
+
+  nxtDisplayCenteredTextLine(0, "Lego");
+  nxtDisplayCenteredBigTextLine(1, "TOUCH");
+  nxtDisplayCenteredTextLine(3, "SMUX Test");
+  nxtDisplayCenteredTextLine(5, "Connect SMUX to");
+  nxtDisplayCenteredTextLine(6, "S1 and sensor to");
+  nxtDisplayCenteredTextLine(7, "SMUX Port 1");
+  wait1Msec(2000);
+
+  eraseDisplay();
+
+  while (true) {
+    // Check if the sensor is pressed or not.
+    if (TSreadState(touchLeft))
+      nxtDisplayCenteredBigTextLine(3, "ACTIVE");
+    else
+      nxtDisplayCenteredBigTextLine(3, "INACTIVE");
+    wait1Msec(50);
+  }
+
+  */
+  }
