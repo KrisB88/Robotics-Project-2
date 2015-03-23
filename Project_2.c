@@ -193,15 +193,28 @@ task PushEggTowardsNest()
 {
 	//StopTask(MoveTowardsEgg);
 	StopTask(StopAtEgg);
-		while((compassReading + 180) %360 == SensorValue(compassSensor)/*&& wall == false*/){// hopefully do a 180 degree turn
-					motor[rightMotor] = MOTOR_MAX;
+		//while((compassReading + 180) %360 == SensorValue(compassSensor)/*&& wall == false*/){// hopefully do a 180 degree turn
+			//		motor[rightMotor] = MOTOR_MAX;
+			//}
+			nxtDisplayClearTextLine(0);
+			int currentFloor =LSvalRaw(lightSensor);
+			while(currentFloor > floorValue - 50  && currentFloor < nestValue + 50 ){
+
+					nxtDisplayClearTextLine(1);
+					nxtDisplayClearTextLine(2);
+					nxtDisplayClearTextLine(3);
+					nxtDisplayTextLine(0, "Current Value");
+					nxtDisplayTextLine(1, "%4d", currentFloor);
+					nxtDisplayTextLine(3, "%4d", floorValue);
+					nxtDisplayTextLine(2, "%4d", nestValue);
+
+				 	currentFloor =LSvalRaw(lightSensor);
 			}
-			while(LSvalRaw(lightSensor) != nestValue){
-				Forward();
-			}
+
+			wait10Msec(1000);
 			raiseArm();
 			egg= false;
-			Right(100, 45);
+			//Right(100, 45);
 }
 task MoveTowardsEgg()
 {
@@ -278,7 +291,7 @@ task main()
 /*************************************************************
 									Get the Nest Value
 **************************************************************/
-	/*while (nNxtButtonPressed != 3) {
+	while (nNxtButtonPressed != 3) {
 	 // The enter button has been pressed, switch
     // to the other mode
    // nxtDisplayClearTextLine(0);
@@ -289,11 +302,11 @@ task main()
      wait1Msec(25);
   }
 	wait1Msec(2000);
-	*/
+
 /*************************************************************
 									Get the Floor Value
 **************************************************************/
-  /*
+
   while (nNxtButtonPressed != 3) {
 	 // The enter button has been pressed, switch
     // to the other mode
@@ -305,7 +318,7 @@ task main()
      wait1Msec(25);
   }
 	wait1Msec(2000);
-	*/
+
 /*************************************************************
 									Get the Compass Value
 **************************************************************/
@@ -335,12 +348,10 @@ while (nNxtButtonPressed != 3) {
 	//StartTask(DetectWall);
 	//StartTask(MoveTowardsEgg);
 	//StartTask(Wander);
-
-	//while(LSvalRaw(lightSensor) != floorValue); // do not start the task until we have gotten onto the floor
-		//StartTask(detectOutOfBounds);
-  raiseArm();
-  wait10Msec(1000);
-  lowerArm();
+  StartTask(PushEggTowardsNest);
+  //raiseArm();
+  //wait10Msec(1000);
+  //lowerArm();
 while(true);
 	 // set to some logical expression later, preferrably a "We have completed the task" or I have pressed a button
 		// this may be difficult without prior knowledge of the course
