@@ -96,13 +96,13 @@ void Halt()
 	motor[leftMotor] = 0;
 }
 void raiseArm(){
-	while(nMotorEncoder[clawMotor] <500){ //setting it to arbitrary value until can make an angle based assumption
-	motor[clawMotor]= MOTOR_MAX;
+	while(nMotorEncoder[clawMotor] <10){ //setting it to arbitrary value until can make an angle based assumption
+	motor[clawMotor]= MOTOR_MIN;
 }
 }
 void lowerArm(){
-	while(nMotorEncoder[clawMotor] <500){ //setting it to arbitrary value until can make an angle based assumption
-	motor[clawMotor]= MOTOR_MIN;
+	while(nMotorEncoder[clawMotor] <10){ //setting it to arbitrary value until can make an angle based assumption
+	motor[clawMotor]= MOTOR_MAX;
 }
 }
 /* ENABLE AND DISABLE FUNCTIONS---------------------------------------------------------
@@ -191,18 +191,30 @@ task Wander()
 //useing the ULTRASONIC_PORT to close the distance from robot to egg
 task PushEggTowardsNest()
 {
-	StopTask(MoveTowardsEgg); //
+	//StopTask(MoveTowardsEgg);
+	StopTask(StopAtEgg);
 		while((compassReading + 180) %360 == SensorValue(compassSensor)/*&& wall == false*/){// hopefully do a 180 degree turn
-			motor[rightMotor] = MOTOR_MAX;
+					motor[rightMotor] = MOTOR_MAX;
 			}
-
+			while(LSvalRaw(lightSensor) != nestValue){
+				Forward();
+			}
+			raiseArm();
+			egg= false;
+			Right(100, 45);
 }
 task MoveTowardsEgg()
 {
 	int distance = 10; // need to test value
 	while(USreadDist(ultrasonicSensor) > distance /*&& wall == false*/){
 		Forward();
-		//might add a detect egg function in here
+		int tempDist=USreadDist(ultrasonicSensor);
+		wait1Msec(10);
+		Right(1, 5);
+		if(tempDist > USreadDist(ultrasonicSensor)){
+		wait1Msec(10);
+		Left(1 ,7);
+	}
 	}
 	//lowerArm();
 	//Halt();
@@ -214,7 +226,9 @@ when readings are negative or not in range, that means we have the egg
 */
 task StopAtEgg()
 {
-	Halt();
+	StopTask(MoveTowardsEgg);
+	//Halt();
+	wait10Msec(1000);
 	//lowerArm();
 	egg=true;// assume it was sucessful for now
 	StartTask(PushEggTowardsNest);
@@ -225,27 +239,7 @@ task StopAtEgg()
 
 //this will makes the robot push the egg into the nest(blue zone)
 //will be using the LIGHT_SENSOR to detect the colors of the nest and line to it
-task detectOutOfBounds()
-{
 
-	if(SensorValue(lightSensor)== nestValue){
-		if( egg ==false){				//might logically shortcut it later
-		nxtDisplayTextLine(0, "Out of Bounds");
-		nSyncedMotors=synchAB;
-		nSyncedTurnRatio=  90; // try to do a full 180 turn at a sharp angle to reduce time
-		while((compassReading + 180) %360 != SensorValue(compassSensor)){
-			motor[rightMotor] = MOTOR_MAX;
-			}
-		}
-		else{ // we have the egg
-			Forward(300);
-			raiseArm();
-			egg= false;
-			Right(100, 45);
-		}
-	}
-	nxtDisplayClearTextLine(0);
-}
 
 //this will detect a wall
 //when LEFT_TOUCH_SENSOR or RIGHT_TOUCH_SENSOR is pressed?
@@ -339,11 +333,14 @@ while (nNxtButtonPressed != 3) {
  // set to some logical expression later, preferrably a "We have completed the task" or I have pressed a button
 							// this may be difficult without prior knowledge of the course
 	//StartTask(DetectWall);
-	StartTask(MoveTowardsEgg);
+	//StartTask(MoveTowardsEgg);
 	//StartTask(Wander);
 
 	//while(LSvalRaw(lightSensor) != floorValue); // do not start the task until we have gotten onto the floor
 		//StartTask(detectOutOfBounds);
+  raiseArm();
+  wait10Msec(1000);
+  lowerArm();
 while(true);
 	 // set to some logical expression later, preferrably a "We have completed the task" or I have pressed a button
 		// this may be difficult without prior knowledge of the course
