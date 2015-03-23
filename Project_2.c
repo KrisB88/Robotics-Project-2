@@ -31,11 +31,11 @@ const tMUXSensor ultrasonicSensor = msensor_S1_1; // Ultrasonic smux port 1
 //declaring motor speeds
 int MOTOR_MAX = 50;
 int MOTOR_MIN = -50;
-bool wall=false;
+bool wall= false;
 bool egg= false;
 int compassReading;
 int nestValue;
-
+int floorValue;
 
 
 
@@ -51,8 +51,9 @@ void Forward( int length)
 }
 void Forward( )
 {
+		nSyncedMotors=synchAB;
 	motor[rightMotor] = MOTOR_MAX;
-	motor[leftMotor] = MOTOR_MAX;
+	//motor[leftMotor] = MOTOR_MAX;
 }
 //this moves the robot to the left
 void Left( int length, int turnRadians)
@@ -82,7 +83,7 @@ void Backwards( int length)
 	nSyncedMotors=synchAB;
 	while(nMotorEncoder[leftMotor]<length){
 	motor[rightMotor] = MOTOR_MIN;
-	motor[leftMotor] = MOTOR_MIN;
+	//motor[leftMotor] = MOTOR_MIN;
 	}
 }
 //this funciton halts the robot
@@ -100,19 +101,6 @@ void lowerArm(){
 	while(nMotorEncoder[clawMotor] <500){ //setting it to arbitrary value until can make an angle based assumption
 	motor[clawMotor]= MOTOR_MIN;
 }
-}
-
-/*SENSOR FUNCTIONS----------------------------------------------------------------------*/
-bool left_touch()
-{
-//	return	SensorValue(touchLeft)==0;
-	//return /*DigitalPinValue???*/ digital(LEFT_TOUCH_PORT);
-}
-
-bool right_touch()
-{
-	return	SensorValue(touchRight)==0;
-	//return /*DigitalPinValue???*/ digital(RIGHT_TOUCH_PORT);
 }
 /* ENABLE AND DISABLE FUNCTIONS---------------------------------------------------------
 void enable(int pid)
@@ -149,11 +137,11 @@ task Wander()
 	//add in a loop for timer to make the robot stop program after a certain amount of time (nothing is found)
 	ClearTimer(T1);
 	//time10[T1] < 120000
-	while(time10[T1] < 120000 && wall== false)//2 minutes
+	while(time10[T1] < 120000)//2 minutes
 	{
 		//nMotorEncoder[leftMotor]=0; //not sure if need to reset periodically
 		//nMotorEncoder[rightMotor]=0;
-		int decision =random(3);
+		int decision =random(100)%3;//%3
 		switch(decision){ //goes in one of the 8 directions
 			case 0:
 				Forward(random(500)+250);
@@ -198,12 +186,24 @@ task Wander()
 
 //this makes the robot move towards the egg
 //useing the ULTRASONIC_PORT to close the distance from robot to egg
+task PushEggTowardsNest()
+{
+	StopTask(MoveTowardsEgg); //
+		while((compassReading + 180) %360 == SensorValue(compassSensor)){// hopefully do a 180 degree turn
+			motor[rightMotor] = MOTOR_MAX;
+			}
+
+}
 task MoveTowardsEgg()
 {
-	int distance = 10;
-	while(SensorValue(ultrasonicSensor) > distance ){
+	int distance = 10; // need to test value
+	while(USreadDist(ultrasonicSensor) > distance ){
 		Forward();
+		//might add a detect egg function in here
 	}
+	lowerArm();
+	egg=true;// assume it was sucessful for now
+	StartTask(PushEggTowardsNest);
 }
 /*this stops the robot when it hits the egg
 we will be using values from the ULTRASONIC_PORT
@@ -216,14 +216,12 @@ when readings are negative or not in range, that means we have the egg
 
 //this will make the robot push the egg towards the nest
 //need compass values from COMPASS_PORT to find way back to nest
-task PushEggTowardsNest()
-{
 
-}
 //this will makes the robot push the egg into the nest(blue zone)
 //will be using the LIGHT_SENSOR to detect the colors of the nest and line to it
 task detectOutOfBounds()
 {
+
 	if(SensorValue(lightSensor)== nestValue){
 		if( egg ==false){				//might logically shortcut it later
 		nSyncedMotors=synchAB;
@@ -234,8 +232,10 @@ task detectOutOfBounds()
 		}
 		else{ // we have the egg
 			Forward(300);
-
+			raiseArm();
+			egg= false;
 			Right(100, 45);
+
 		}
 	}
 }
@@ -245,14 +245,16 @@ task detectOutOfBounds()
 //how do we tell the wall is different from the eggs?
 task DetectWall()
 {
-	while( !left_touch() && !right_touch()) //while this isn't detected, do nothing
+	while( !TSreadState(touchLeft) && !TSreadState(touchRight)); //while this isn't detected, do nothing
+
 
 		wall= true;
 		Halt();//when detected stop
-		wait10Msec(100);// wait
-		Backwards(750); //then backwards
-		Right(250, 45);// turn to get out of the way
-
+		//StopTask(Wander);
+		wait10Msec(20);// wait
+		Backwards(50); //then backwards
+		Right(50, 45);// turn to get out of the way
+		//StartTask(Wander);
 }
 
 //this is where all the functions are called
@@ -263,6 +265,66 @@ task main()
 	nMotorEncoder[leftMotor]=0;
 	nMotorEncoder[rightMotor]=0;
 	nMotorEncoder[clawMotor]=0;
+	//raiseArm();// make sure it starts out as "ready to use"
+/*************************************************************
+									Get the Nest Value
+**************************************************************/
+	 while (nNxtButtonPressed != 3) {
+	 // The enter button has been pressed, switch
+    // to the other mode
+   // nxtDisplayClearTextLine(0);
+    nxtDisplayClearTextLine(1);
+    nestValue = LSvalRaw(lightSensor);// could use the "Norm value" too
+    nxtDisplayTextLine(0, "Lego");
+    nxtDisplayTextLine(1, "Nest Value: %4d", nestValue);
+     wait1Msec(25);
+  }
+	wait1Msec(200);
+
+/*************************************************************
+									Get the Floor Value
+**************************************************************/
+  while (nNxtButtonPressed != 3) {
+	 // The enter button has been pressed, switch
+    // to the other mode
+    //nxtDisplayClearTextLine(0);
+    nxtDisplayClearTextLine(1);
+    floorValue = LSvalRaw(lightSensor);// could use the "Norm value" too
+    nxtDisplayTextLine(0, "Lego");
+    nxtDisplayTextLine(1, "Floor Value: %4d", floorValue);
+     wait1Msec(25);
+  }
+	wait1Msec(200);
+
+/*************************************************************
+									Get the Compass Value
+**************************************************************/
+	 while (nNxtButtonPressed != 3) {
+	 // The enter button has been pressed, switch
+    // to the other mode
+    //nxtDisplayClearTextLine(0);
+    nxtDisplayClearTextLine(1);
+    compassReading = LSvalRaw(compassSensor);// could use the "Norm value" too
+    nxtDisplayTextLine(0, "Lego");
+    nxtDisplayTextLine(1, "Floor Value: %4d", compassReading);
+     wait1Msec(25);
+  }
+  wait1Msec(200);
+
+  /*************************************************************************
+  								Actually Start Task Here
+  *************************************************************************/
+	//StartTask(detectOutOfBounds);
+	StartTask(DetectWall);
+	StartTask(MoveTowardsEgg);
+	StartTask(Wander);
+
+	while(LSvalRaw(lightSensor) != floorValue); // do not start the task until we have gotten onto the floor
+		StartTask(detectOutOfBounds);
+
+	while(true); // set to some logical expression later, preferrably a "We have completed the task" or I have pressed a button
+		// this may be difficult without prior knowledge of the course
+	//StopAllTasks();
  /*************************************
  			Light Sensor Test
  ***************************************
@@ -378,28 +440,4 @@ int raw = 0;
   }
   */
 
-  /*************************************
- 			Touch Sensor Test
- ***************************************
-
-  nxtDisplayCenteredTextLine(0, "Lego");
-  nxtDisplayCenteredBigTextLine(1, "TOUCH");
-  nxtDisplayCenteredTextLine(3, "SMUX Test");
-  nxtDisplayCenteredTextLine(5, "Connect SMUX to");
-  nxtDisplayCenteredTextLine(6, "S1 and sensor to");
-  nxtDisplayCenteredTextLine(7, "SMUX Port 1");
-  wait1Msec(2000);
-
-  eraseDisplay();
-
-  while (true) {
-    // Check if the sensor is pressed or not.
-    if (TSreadState(touchLeft))
-      nxtDisplayCenteredBigTextLine(3, "ACTIVE");
-    else
-      nxtDisplayCenteredBigTextLine(3, "INACTIVE");
-    wait1Msec(50);
-  }
-
-  */
   }
