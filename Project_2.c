@@ -22,8 +22,8 @@ Due: 03/23/15
 
 // Define easy names for sensors connected to multiplexer
 const tMUXSensor lightSensor = msensor_S1_4;	//Light sensor in smux port 4
-const tMUXSensor  touchRight= msensor_S1_2;	//Touch right smux port 3
-const tMUXSensor  touchLeft = msensor_S1_3; //Touch left smux port 2
+const tMUXSensor  touchRight= msensor_S1_3;	//Touch right smux port 3
+const tMUXSensor  touchLeft = msensor_S1_2; //Touch left smux port 2
 const tMUXSensor ultrasonicSensor = msensor_S1_1; // Ultrasonic smux port 1
 
 
@@ -37,8 +37,11 @@ int compassReading;
 int nestValue;
 int floorValue;
 
-
-
+task MoveTowardsEgg();
+task DetectWall();
+task Wander();
+task StopAtEgg();
+task PushEggTowardsNest();
 /*BASIC FUNCTIONS-------------------------------------------------------------------- */
 //this moves the robot forwards
 void Forward( int length)
@@ -137,11 +140,11 @@ task Wander()
 	//add in a loop for timer to make the robot stop program after a certain amount of time (nothing is found)
 	ClearTimer(T1);
 	//time10[T1] < 120000
-	while(time10[T1] < 120000)//2 minutes
+	while(time10[T1] < 120000 /*&& wall == false*/)//2 minutes
 	{
 		//nMotorEncoder[leftMotor]=0; //not sure if need to reset periodically
 		//nMotorEncoder[rightMotor]=0;
-		int decision =random(100)%3;//%3
+		int decision =random(100)%3;//%3 //explicit "don't reach the default case"
 		switch(decision){ //goes in one of the 8 directions
 			case 0:
 				Forward(random(500)+250);
@@ -189,7 +192,7 @@ task Wander()
 task PushEggTowardsNest()
 {
 	StopTask(MoveTowardsEgg); //
-		while((compassReading + 180) %360 == SensorValue(compassSensor)){// hopefully do a 180 degree turn
+		while((compassReading + 180) %360 == SensorValue(compassSensor)/*&& wall == false*/){// hopefully do a 180 degree turn
 			motor[rightMotor] = MOTOR_MAX;
 			}
 
@@ -197,22 +200,25 @@ task PushEggTowardsNest()
 task MoveTowardsEgg()
 {
 	int distance = 10; // need to test value
-	while(USreadDist(ultrasonicSensor) > distance ){
+	while(USreadDist(ultrasonicSensor) > distance /*&& wall == false*/){
 		Forward();
 		//might add a detect egg function in here
 	}
-	lowerArm();
-	egg=true;// assume it was sucessful for now
-	StartTask(PushEggTowardsNest);
+	//lowerArm();
+	//Halt();
+	StartTask(StopAtEgg);
 }
 /*this stops the robot when it hits the egg
 we will be using values from the ULTRASONIC_PORT
 when readings are negative or not in range, that means we have the egg
 */
-//task StopAtEgg()
-//{
-
-//}
+task StopAtEgg()
+{
+	Halt();
+	//lowerArm();
+	egg=true;// assume it was sucessful for now
+	StartTask(PushEggTowardsNest);
+}
 
 //this will make the robot push the egg towards the nest
 //need compass values from COMPASS_PORT to find way back to nest
@@ -224,9 +230,10 @@ task detectOutOfBounds()
 
 	if(SensorValue(lightSensor)== nestValue){
 		if( egg ==false){				//might logically shortcut it later
+		nxtDisplayTextLine(0, "Out of Bounds");
 		nSyncedMotors=synchAB;
 		nSyncedTurnRatio=  90; // try to do a full 180 turn at a sharp angle to reduce time
-		while((compassReading + 180) %360 == SensorValue(compassSensor)){
+		while((compassReading + 180) %360 != SensorValue(compassSensor)){
 			motor[rightMotor] = MOTOR_MAX;
 			}
 		}
@@ -235,9 +242,9 @@ task detectOutOfBounds()
 			raiseArm();
 			egg= false;
 			Right(100, 45);
-
 		}
 	}
+	nxtDisplayClearTextLine(0);
 }
 
 //this will detect a wall
@@ -245,16 +252,22 @@ task detectOutOfBounds()
 //how do we tell the wall is different from the eggs?
 task DetectWall()
 {
+	nxtDisplayTextLine(0, "Wall Not Detected");
 	while( !TSreadState(touchLeft) && !TSreadState(touchRight)); //while this isn't detected, do nothing
+		nxtDisplayClearTextLine(0);
+		nxtDisplayTextLine(0, "Wall Detected");
+		//wall= true;// implicit stop used in wander function adn move towards egg function
+		//Halt();//when detected stop
+		StopTask(Wander); //explicit stop all movement processes
 
-
-		wall= true;
-		Halt();//when detected stop
-		//StopTask(Wander);
-		wait10Msec(20);// wait
+		wait10Msec(200);// wait
 		Backwards(50); //then backwards
 		Right(50, 45);// turn to get out of the way
-		//StartTask(Wander);
+		StartTask(Wander);
+		//wall= false;
+
+	//StartTask(Wander);
+	 nxtDisplayClearTextLine(0);
 }
 
 //this is where all the functions are called
@@ -265,11 +278,13 @@ task main()
 	nMotorEncoder[leftMotor]=0;
 	nMotorEncoder[rightMotor]=0;
 	nMotorEncoder[clawMotor]=0;
+
 	//raiseArm();// make sure it starts out as "ready to use"
+
 /*************************************************************
 									Get the Nest Value
 **************************************************************/
-	 while (nNxtButtonPressed != 3) {
+	/*while (nNxtButtonPressed != 3) {
 	 // The enter button has been pressed, switch
     // to the other mode
    // nxtDisplayClearTextLine(0);
@@ -279,11 +294,12 @@ task main()
     nxtDisplayTextLine(1, "Nest Value: %4d", nestValue);
      wait1Msec(25);
   }
-	wait1Msec(200);
-
+	wait1Msec(2000);
+	*/
 /*************************************************************
 									Get the Floor Value
 **************************************************************/
+  /*
   while (nNxtButtonPressed != 3) {
 	 // The enter button has been pressed, switch
     // to the other mode
@@ -294,35 +310,42 @@ task main()
     nxtDisplayTextLine(1, "Floor Value: %4d", floorValue);
      wait1Msec(25);
   }
-	wait1Msec(200);
-
+	wait1Msec(2000);
+	*/
 /*************************************************************
 									Get the Compass Value
 **************************************************************/
-	 while (nNxtButtonPressed != 3) {
+/*
+while (nNxtButtonPressed != 3) {
 	 // The enter button has been pressed, switch
     // to the other mode
     //nxtDisplayClearTextLine(0);
     nxtDisplayClearTextLine(1);
-    compassReading = LSvalRaw(compassSensor);// could use the "Norm value" too
+    compassReading = HTMCsetTarget(compassSensor);// could use the "Norm value" too
     nxtDisplayTextLine(0, "Lego");
-    nxtDisplayTextLine(1, "Floor Value: %4d", compassReading);
+    nxtDisplayTextLine(1, "Compass Value:" );
+    nxtDisplayTextLine(2, "\t %4d", compassReading);
      wait1Msec(25);
   }
-  wait1Msec(200);
-
-  /*************************************************************************
+  wait1Msec(2000);
+    nxtDisplayClearTextLine(0);
+    nxtDisplayClearTextLine(1);
+    nxtDisplayClearTextLine(2);
+  */
+  /**********************************************************
   								Actually Start Task Here
-  *************************************************************************/
+  **********************************************************/
 	//StartTask(detectOutOfBounds);
-	StartTask(DetectWall);
+ // set to some logical expression later, preferrably a "We have completed the task" or I have pressed a button
+							// this may be difficult without prior knowledge of the course
+	//StartTask(DetectWall);
 	StartTask(MoveTowardsEgg);
-	StartTask(Wander);
+	//StartTask(Wander);
 
-	while(LSvalRaw(lightSensor) != floorValue); // do not start the task until we have gotten onto the floor
-		StartTask(detectOutOfBounds);
-
-	while(true); // set to some logical expression later, preferrably a "We have completed the task" or I have pressed a button
+	//while(LSvalRaw(lightSensor) != floorValue); // do not start the task until we have gotten onto the floor
+		//StartTask(detectOutOfBounds);
+while(true);
+	 // set to some logical expression later, preferrably a "We have completed the task" or I have pressed a button
 		// this may be difficult without prior knowledge of the course
 	//StopAllTasks();
  /*************************************
