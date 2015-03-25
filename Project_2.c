@@ -27,11 +27,12 @@ const tMUXSensor  touchRight= msensor_S1_3;	//Touch right smux port 3
 const tMUXSensor  touchLeft = msensor_S1_2; //Touch left smux port 2
 const tMUXSensor ultrasonicSensor = msensor_S1_1; // Ultrasonic smux port 1
 
-
-
+#define MAX_DISTANCE 15
+#define UNDEFINED_FLOOR 24
+#define UNDEFINED_NEST 13
+bool wall, random_walk;
 //declaring motor speeds
-bool wall= false;
-bool egg= false;
+
 int compassReading;
 int nestValue = 15;
 int floorValue = 25;
@@ -73,7 +74,11 @@ void disable(int pid)
 //this makes the robot wander
 task Wander()
 {
+					nxtDisplayTextLine(0, "Task: Wander");
+					nxtDisplayCenteredTextLine(1, "------------------");
+
 	//add in a loop for timer to make the robot stop program after a certain amount of time (nothing is found)
+	random_walk= true;
 	ClearTimer(T1);
 	//time10[T1] < 120000
 	while(time10[T1] < 120000 /*&& wall == false*/)//2 minutes
@@ -83,16 +88,16 @@ task Wander()
 		int decision =random(100)%3;//%3 //explicit "don't reach the default case"
 		switch(decision){ //goes in one of the 8 directions
 			case 0:
-				Forward(random(500)+250);
+				Forward();
 			break;
 			case 1:
-				Left(random(500) + 250, 45); //pass two arguments, the length of distance traveled and the turn radius
+				Left(0 , 100); //pass two arguments, the length of distance traveled and the turn radius
 			break;
 			case 2:
-				Right(random(500) + 250, 45);
+				Right(0 , 100);
 			break;
 			default:
-			nxtDisplayStringAt(0, 31, "error with random number generator");
+			nxtDisplayStringAt(5, 31, "error with random number generator");
 			wait10Msec(1000);
 			break;
 
@@ -101,15 +106,19 @@ task Wander()
 
 	//enable(pid);
 	//Forward();
+
 }
 
-//this makes the robot move towards the egg
-//useing the ULTRASONIC_PORT to close the distance from robot to egg
+//this will make the robot push the egg towards the nest
+//need compass values from COMPASS_PORT to find way back to nest
+
+//this will makes the robot push the egg into the nest(blue zone)
+//will be using the LIGHT_SENSOR to detect the colors of the nest and line to it
 task PushEggTowardsNest()
 {
 	//StopTask(MoveTowardsEgg);
 	StopTask(StopAtEgg);
-					nxtDisplayTextLine(0, "Task: Move Toward Nest");
+					nxtDisplayTextLine(0, "Move Toward Nest");
 					nxtDisplayCenteredTextLine(1, "------------------");
 					nxtDisplayCenteredTextLine(2, "performing 180 degree turn");
 					nSyncedMotors=synchBA;
@@ -119,13 +128,15 @@ task PushEggTowardsNest()
 					nxtDisplayCenteredTextLine(3, "Current:%4d", HTMCsetTarget(compassSensor));
 					nxtDisplayCenteredTextLine(4, "Home:%4d", compassReading);
 					nxtDisplayClearTextLine(3);
+				//	wait1Msec(1000);
 			}
-			Halt();
+			//Halt();
+			motor[rightMotor] =0;
 			nxtDisplayClearTextLine(2);
 			nxtDisplayClearTextLine(3);
 			nxtDisplayClearTextLine(4);
 			int currentFloor =LSvalNorm(lightSensor);
-			while( currentFloor > nestValue+ 7){
+			while( currentFloor > nestValue+ 5){
 					nxtDisplayClearTextLine(2);
 					//nxtDisplayTextLine(0, "Task: Move Toward Nest");
 					nxtDisplayCenteredTextLine(1, "------------------");
@@ -140,12 +151,28 @@ task PushEggTowardsNest()
 			wait1Msec(1000);
 
 			raiseArm();
-			egg= false;
-			Right(100, 45);
+
+			Right(15, 100);
+			StartTask(Wander);
+
 }
 task MoveTowardsEgg()
 {
-	int distance = 10; // need to test value
+	int distance = 5; // need to test value
+	while(USreadDist(ultrasonicSensor)> MAX_DISTANCE){  // too far away to tell
+					nxtDisplayTextLine(3, "Ultra Sonic:");
+					nxtDisplayCenteredTextLine(4, "%4d" , ultrasonicSensor);
+					//wait1Msec(1000);
+					nxtDisplayClearTextLine(3);
+					nxtDisplayClearTextLine(4);
+
+}
+	Halt();
+	wait1Msec(200);
+	StopTask(Wander);// turn off temporarily
+				nxtDisplayClearTextLine(0);
+				nxtDisplayClearTextLine(1);
+				random_walk= false;
 	while(USreadDist(ultrasonicSensor) > distance){
 		nxtDisplayCenteredTextLine(0, "Task:");
 	 	nxtDisplayCenteredTextLine(1,  "Move Towards Egg" );
@@ -168,7 +195,8 @@ task MoveTowardsEgg()
 			//wait1Msec(10);
 	}
 	nxtDisplayClearTextLine(2);
-	}
+	wait1Msec(15); // might be a problem with the updates
+}
 	//lowerArm();
 	nxtDisplayClearTextLine(0);
 	nxtDisplayClearTextLine(1);
@@ -184,22 +212,18 @@ task StopAtEgg()
 		nxtDisplayCenteredTextLine(0, "Task:");
 	 	nxtDisplayCenteredTextLine(1, "Stop At Egg" );
 		nxtDisplayCenteredTextLine(2, "Lowering Arm" );
-	symph5();
+//	symph5();
 
 	wait1Msec(1000);
 	lowerArm();
-	egg=true;// assume it was sucessful for now
+
+	//egg=true;// assume it was sucessful for now
 	nxtDisplayClearTextLine(0);
 	nxtDisplayClearTextLine(1);
 	nxtDisplayClearTextLine(2);
 	StartTask(PushEggTowardsNest);
 }
 
-//this will make the robot push the egg towards the nest
-//need compass values from COMPASS_PORT to find way back to nest
-
-//this will makes the robot push the egg into the nest(blue zone)
-//will be using the LIGHT_SENSOR to detect the colors of the nest and line to it
 
 
 //this will detect a wall
@@ -207,43 +231,60 @@ task StopAtEgg()
 //how do we tell the wall is different from the eggs?
 task DetectWall()
 {
-	nxtDisplayTextLine(0, "Wall Not Detected");
+	wall= true;
+	nxtDisplayTextLine(6, "Wall Not Detected");
 	while( !TSreadState(touchLeft) && !TSreadState(touchRight)); //while this isn't detected, do nothing
-		nxtDisplayClearTextLine(0);
-		nxtDisplayTextLine(0, "Wall Detected");
-		wait1Msec(100);
-		//wall= true;// implicit stop used in wander function adn move towards egg function
-		//Halt();//when detected stop
-		//StopTask(Wander); //explicit stop all movement processes
 
-		wait10Msec(200);// wait
-		Backwards(50); //then backwards
-		Right(50, 45);// turn to get out of the way
-		Halt();
+	nxtDisplayClearTextLine(6);
+		nxtDisplayTextLine(6, "Wall Detected");
+
+		//hogCPU();
+		//Halt();
+			nSyncedMotors=synchAB;
+			nMotorEncoder[rightMotor]=0;
+
+			while(nMotorEncoder[rightMotor]<2){
+			motor[rightMotor] = MOTOR_MIN;
+
+	}
+	nSyncedMotors=synchAB;
+	nSyncedTurnRatio= 100;
+	while(nMotorEncoder[rightMotor]< 1){
+	motor[leftMotor] = MOTOR_MAX;
+
+}
+
+
+
+	motor[rightMotor] = 0;
 		//StartTask(Wander);
-		//wall= false;
+		wall= false;
 
 	//StartTask(Wander);
 	 nxtDisplayClearTextLine(0);
+	 //releaseCPU();
 }
 
 //this is where all the functions are called
 task main()
 {
-//symph5();
+	//starWars();
+	//furelise();
+	//symph5();
 	//initialize because junk values are a thing
 	nMotorEncoder[leftMotor]=0;
 	nMotorEncoder[rightMotor]=0;
 	nMotorEncoder[clawMotor]=0;
-
+floorValue=0;
+nestValue=0;
 //StartTask(MoveTowardsEgg);
 	//raiseArm();// make sure it starts out as "ready to use"
-
+//lowerArm();
 
 /*************************************************************
 									Get the Nest Value
 **************************************************************/
-
+/*
 while (nNxtButtonPressed != 3) {
 	 // The enter button has been pressed, switch
     // to the other mode
@@ -255,11 +296,11 @@ while (nNxtButtonPressed != 3) {
      wait1Msec(25);
   }
 	wait1Msec(2000);
-
+*/
 /*************************************************************
 									Get the Floor Value
 **************************************************************/
-
+/*
   while (nNxtButtonPressed != 3) {
 	 // The enter button has been pressed, switch
     // to the other mode
@@ -271,11 +312,11 @@ while (nNxtButtonPressed != 3) {
      wait1Msec(25);
   }
 	wait1Msec(2000);
-
+*/
 /*************************************************************
 									Get the Compass Value
 **************************************************************/
-
+/*
 while (nNxtButtonPressed != 3) {
 	 // The enter button has been pressed, switch
     // to the other mode
@@ -291,21 +332,25 @@ while (nNxtButtonPressed != 3) {
     nxtDisplayClearTextLine(0);
     nxtDisplayClearTextLine(1);
     nxtDisplayClearTextLine(2);
-
+*/
   /**********************************************************
   								Actually Start Task Here
   **********************************************************/
-
+if(floorValue ==0 && nestValue == 0){
+	floorValue= UNDEFINED_FLOOR;
+	nestValue = UNDEFINED_NEST;
+}
  // set to some logical expression later, preferrably a "We have completed the task" or I have pressed a button
 							// this may be difficult without prior knowledge of the course
-//Left(1,100);
-//Right(100,150);
-	//StartTask(DetectWall);
-	//starWars();
+
+	StartTask(DetectWall);
   //raiseArm();
-  //symph5();
-	StartTask(MoveTowardsEgg);
+
 	//StartTask(Wander);
+	//wait10Msec(5);
+	//StartTask(MoveTowardsEgg);
+	//wait10Msec(5);
+
   //StartTask(PushEggTowardsNest);
   //raiseArm();
   //wait10Msec(1000);

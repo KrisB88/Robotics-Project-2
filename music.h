@@ -50,3 +50,15 @@ PlayTone(293, 54); while(bSoundActive);
 PlayTone(293, 54); while(bSoundActive);
 PlayTone(246, 102); while(bSoundActive);
 }
+void furelise(){
+PlayTone(329, 24); while(bSoundActive);
+PlayTone(311, 24); while(bSoundActive);
+PlayTone(329, 24); while(bSoundActive);
+PlayTone(311, 24); while(bSoundActive);
+PlayTone(329, 52); while(bSoundActive);
+wait10Msec(24);
+PlayTone(246, 34); while(bSoundActive);
+PlayTone(293, 34); while(bSoundActive);
+PlayTone(261, 34); while(bSoundActive);
+PlayTone(220, 105); while(bSoundActive);
+}
