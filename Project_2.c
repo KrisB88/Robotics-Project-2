@@ -19,6 +19,7 @@ Due: 03/23/15
 #include "drivers/lego-light.h"
 #include "drivers/lego-touch.h"
 #include "drivers/hitechnic-compass.h"
+#include "drivers/hitechnic-touchmux.h"
 #include "motion.h"
 #include "music.h"
 // Define easy names for sensors connected to multiplexer
@@ -42,33 +43,7 @@ task DetectWall();
 task Wander();
 task StopAtEgg();
 task PushEggTowardsNest();
-/* ENABLE AND DISABLE FUNCTIONS---------------------------------------------------------
-void enable(int pid)
-{
-	process_enable[pid] = process_priority[pid];
-}
 
-void disable(int pid)
-{
-	process_enable[pid] = 0;
-}*/
-/*-----------maybe a helper function like periodic turn to help the robot wander more effectively? */
-/*void periodic_turn(int pid)
-{
-	while(true)
-	{
-		if( time100)
-		{
-			enable(pid);
-			Right(pid);
-			//msleep(500L); Use halt instead?
-			Halt(pid);
-			disable(pid);
-			//msleep();
-			Halt(pid);
-		}
-	}
-}*/
 
 /* THESE ARE THE MAIN TASKS AS DESCRIBED ON THE PROJECT DESCRIPTION---------------------- */
 //this makes the robot wander
@@ -113,7 +88,7 @@ task Wander()
 //need compass values from COMPASS_PORT to find way back to nest
 
 //this will makes the robot push the egg into the nest(blue zone)
-//will be using the LIGHT_SENSOR to detect the colors of the nest and line to it
+//will be using the LIGHT_SENSOR to find the colors of the nest and line to it
 task PushEggTowardsNest()
 {
 	//StopTask(MoveTowardsEgg);
@@ -153,6 +128,7 @@ task PushEggTowardsNest()
 			raiseArm();
 
 			Right(15, 100);
+			HaltArm();
 			StartTask(Wander);
 
 }
@@ -173,7 +149,7 @@ task MoveTowardsEgg()
 				nxtDisplayClearTextLine(0);
 				nxtDisplayClearTextLine(1);
 				random_walk= false;
-	while(USreadDist(ultrasonicSensor) > distance){
+	while(USreadDist(ultrasonicSensor) > distance ){
 		nxtDisplayCenteredTextLine(0, "Task:");
 	 	nxtDisplayCenteredTextLine(1,  "Move Towards Egg" );
 		nxtDisplayCenteredTextLine(2, "Range: %d",USreadDist(ultrasonicSensor));
@@ -212,7 +188,7 @@ task StopAtEgg()
 		nxtDisplayCenteredTextLine(0, "Task:");
 	 	nxtDisplayCenteredTextLine(1, "Stop At Egg" );
 		nxtDisplayCenteredTextLine(2, "Lowering Arm" );
-//	symph5();
+	symph5();
 
 	wait1Msec(1000);
 	lowerArm();
@@ -234,34 +210,35 @@ task DetectWall()
 	wall= true;
 	nxtDisplayTextLine(6, "Wall Not Detected");
 	while( !TSreadState(touchLeft) && !TSreadState(touchRight)); //while this isn't detected, do nothing
-
+//while( !HTTMUXisActive(touchLeft) && !HTTMUXisActive(touchRight));
 	nxtDisplayClearTextLine(6);
 		nxtDisplayTextLine(6, "Wall Detected");
 
 		//hogCPU();
+		StopTask(Wander);
+		StopTask(MoveTowardsEgg);
+		StopTask(StopAtEgg);
+	//	StopTask(PushEggTowardsNest);
+		wait10Msec(50);
+
 		//Halt();
-			nSyncedMotors=synchAB;
-			nMotorEncoder[rightMotor]=0;
-
-			while(nMotorEncoder[rightMotor]<2){
-			motor[rightMotor] = MOTOR_MIN;
-
-	}
-	nSyncedMotors=synchAB;
-	nSyncedTurnRatio= 100;
-	while(nMotorEncoder[rightMotor]< 1){
-	motor[leftMotor] = MOTOR_MAX;
-
-}
+		motor[rightMotor]=0;
+		motor[clawMotor]=0;
+	Backwards(1);
+	wait10Msec(50);
+	Right(15,150);
+	Halt();
 
 
 
 	motor[rightMotor] = 0;
-		//StartTask(Wander);
+		StartTask(Wander);
+		StartTask(MoveTowardsEgg);
+
 		wall= false;
 
 	//StartTask(Wander);
-	 nxtDisplayClearTextLine(0);
+	 nxtDisplayClearTextLine(6);
 	 //releaseCPU();
 }
 
@@ -277,11 +254,8 @@ task main()
 	nMotorEncoder[clawMotor]=0;
 floorValue=0;
 nestValue=0;
-//StartTask(MoveTowardsEgg);
-	//raiseArm();// make sure it starts out as "ready to use"
-//lowerArm();
 
-/*************************************************************
+	/*************************************************************
 									Get the Nest Value
 **************************************************************/
 /*
@@ -342,6 +316,7 @@ if(floorValue ==0 && nestValue == 0){
 }
  // set to some logical expression later, preferrably a "We have completed the task" or I have pressed a button
 							// this may be difficult without prior knowledge of the course
+	//Right(50,150);
 
 	StartTask(DetectWall);
   //raiseArm();
@@ -355,7 +330,12 @@ if(floorValue ==0 && nestValue == 0){
   //raiseArm();
   //wait10Msec(1000);
   //lowerArm();
-while(true);
+while(true){
+	if(wall == false)
+	{
+		StartTask(DetectWall);
+	}
+}
 
  /*
     while (!TSreadState(touchRight));

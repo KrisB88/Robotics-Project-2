@@ -43,7 +43,7 @@ void Right( int length, int turnRadians)
 void Backwards( int length)
 {
 	nSyncedMotors=synchAB;
-	while(nMotorEncoder[leftMotor]<length){
+	while(nMotorEncoder[rightMotor]> (0-length)){
 	motor[rightMotor] = MOTOR_MIN;
 	//motor[leftMotor] = MOTOR_MIN;
 	}
@@ -57,7 +57,7 @@ void Halt()
 void raiseArm(){
 	int count=0;
 	//while(count < 1){ //setting it to arbitrary value until can make an angle based assumption
-	while(nMotorEncoder[clawMotor]<1){
+	while(nMotorEncoder[clawMotor]> (0-150)){
 	motor[clawMotor]= MOTOR_MIN;
 	//count++;
 	}
@@ -68,11 +68,11 @@ void lowerArm(){
 	//int count=0;
 	//while(count < 1){ //setting it to arbitrary value until can make an angle based assumption
 nMotorEncoder[clawMotor] = 0;
-while(nMotorEncoder[clawMotor]<1){
+while(nMotorEncoder[clawMotor]< 150){
 	motor[clawMotor]= MOTOR_MAX;
-	//}
+	}
 }
-motor{clawMotor] = 0;
-nMotorEncoder[clawMotor] = 0;
-//motor[clawMotor]=0;
+void HaltArm(){
+motor[clawMotor]=0;
+
 }
