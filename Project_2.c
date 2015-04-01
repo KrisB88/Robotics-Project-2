@@ -21,7 +21,7 @@ Due: 03/23/15
 #include "drivers/hitechnic-compass.h"
 #include "drivers/hitechnic-touchmux.h"
 #include "motion.h"
-#include "music.h"
+//#include "music.h"
 // Define easy names for sensors connected to multiplexer
 const tMUXSensor lightSensor = msensor_S1_4;	//Light sensor in smux port 4
 const tMUXSensor  touchRight= msensor_S1_3;	//Touch right smux port 3
@@ -31,7 +31,7 @@ const tMUXSensor ultrasonicSensor = msensor_S1_1; // Ultrasonic smux port 1
 #define MAX_DISTANCE 15
 #define UNDEFINED_FLOOR 24
 #define UNDEFINED_NEST 13
-bool wall, random_walk;
+bool  random_walk;
 //declaring motor speeds
 
 int compassReading;
@@ -53,7 +53,7 @@ task Wander()
 					nxtDisplayCenteredTextLine(1, "------------------");
 
 	//add in a loop for timer to make the robot stop program after a certain amount of time (nothing is found)
-	random_walk= true;
+	//random_walk= true;
 	ClearTimer(T1);
 	//time10[T1] < 120000
 	while(time10[T1] < 120000 /*&& wall == false*/)//2 minutes
@@ -63,18 +63,18 @@ task Wander()
 		int decision =random(100)%3;//%3 //explicit "don't reach the default case"
 		switch(decision){ //goes in one of the 8 directions
 			case 0:
-				Forward();
-			break;
+						Forward();
+						break;
 			case 1:
-				Left(0 , 100); //pass two arguments, the length of distance traveled and the turn radius
-			break;
+						Left(0 , 100); //pass two arguments, the length of distance traveled and the turn radius
+						break;
 			case 2:
-				Right(0 , 100);
-			break;
+						Right(0 , 100);
+						break;
 			default:
-			nxtDisplayStringAt(5, 31, "error with random number generator");
-			wait10Msec(1000);
-			break;
+						nxtDisplayStringAt(5, 31, "error with random number generator");
+						wait10Msec(1000);
+						break;
 
 	}
 	}
@@ -188,7 +188,7 @@ task StopAtEgg()
 		nxtDisplayCenteredTextLine(0, "Task:");
 	 	nxtDisplayCenteredTextLine(1, "Stop At Egg" );
 		nxtDisplayCenteredTextLine(2, "Lowering Arm" );
-	symph5();
+	//symph5();
 
 	wait1Msec(1000);
 	lowerArm();
@@ -207,86 +207,61 @@ task StopAtEgg()
 //how do we tell the wall is different from the eggs?
 task DetectWall()
 {
-	wall= true;
+	//wall= true;
 	nxtDisplayTextLine(6, "Wall Not Detected");
-	while( !TSreadState(touchLeft) && !TSreadState(touchRight)); //while this isn't detected, do nothing
-//while( !HTTMUXisActive(touchLeft) && !HTTMUXisActive(touchRight));
-	nxtDisplayClearTextLine(6);
-		nxtDisplayTextLine(6, "Wall Detected");
-
-		//hogCPU();
-		StopTask(Wander);
-		StopTask(MoveTowardsEgg);
-		StopTask(StopAtEgg);
-	//	StopTask(PushEggTowardsNest);
-		wait10Msec(50);
-
-		//Halt();
-		motor[rightMotor]=0;
-		motor[clawMotor]=0;
-	Backwards(1);
-	wait10Msec(50);
-	Right(15,150);
-	Halt();
+	while( true){ //while this isn't detected, do nothing
+		if(TSreadState(touchLeft) || TSreadState(touchRight)){
+				nxtDisplayClearTextLine(6);
+				nxtDisplayTextLine(6, "Wall Detected");
 
 
+				StopTask(Wander);
+				//StopTask(MoveTowardsEgg);
+				//StopTask(StopAtEgg);
+				//StopTask(PushEggTowardsNest);
+				wait10Msec(50);
 
-	motor[rightMotor] = 0;
-		StartTask(Wander);
-		StartTask(MoveTowardsEgg);
+					//Halt();
+				motor[rightMotor]=0;
+				motor[clawMotor]=0;
+				Backwards(1);
+				wait10Msec(50);
+				Right(15,150);
+				Halt();
 
-		wall= false;
 
-	//StartTask(Wander);
-	 nxtDisplayClearTextLine(6);
-	 //releaseCPU();
+
+				motor[rightMotor] = 0;
+				//StartTask(Wander);
+				//StartTask(MoveTowardsEgg);
+
+				//wall= false;
+				//StopTask(DetectWall);
+				//StartTask(Wander);
+			 	nxtDisplayClearTextLine(6);
+			 	//releaseCPU();
+			 	EndTimeSlice();
+		}
+		else{
+		//DO NOTHING
+		wait10Msec(100);
+		}
+	}
 }
 
 //this is where all the functions are called
 task main()
 {
-	//starWars();
-	//furelise();
-	//symph5();
+
 	//initialize because junk values are a thing
 	nMotorEncoder[leftMotor]=0;
 	nMotorEncoder[rightMotor]=0;
 	nMotorEncoder[clawMotor]=0;
-floorValue=0;
-nestValue=0;
 
-	/*************************************************************
-									Get the Nest Value
-**************************************************************/
-/*
-while (nNxtButtonPressed != 3) {
-	 // The enter button has been pressed, switch
-    // to the other mode
-   // nxtDisplayClearTextLine(0);
-    nxtDisplayClearTextLine(1);
-    nestValue = LSvalNorm(lightSensor);// could use the "Norm value" too
-    nxtDisplayTextLine(0, "Lego");
-    nxtDisplayTextLine(1, "Nest Value: %4d", nestValue);
-     wait1Msec(25);
-  }
-	wait1Msec(2000);
-*/
-/*************************************************************
-									Get the Floor Value
-**************************************************************/
-/*
-  while (nNxtButtonPressed != 3) {
-	 // The enter button has been pressed, switch
-    // to the other mode
-    //nxtDisplayClearTextLine(0);
-    nxtDisplayClearTextLine(1);
-    floorValue = LSvalNorm(lightSensor);// could use the "Norm value" too
-    nxtDisplayTextLine(0, "Lego");
-    nxtDisplayTextLine(1, "Floor Value: %4d", floorValue);
-     wait1Msec(25);
-  }
-	wait1Msec(2000);
-*/
+	floorValue=0;
+	nestValue=0;
+
+
 /*************************************************************
 									Get the Compass Value
 **************************************************************/
@@ -310,15 +285,19 @@ while (nNxtButtonPressed != 3) {
   /**********************************************************
   								Actually Start Task Here
   **********************************************************/
+  /*
 if(floorValue ==0 && nestValue == 0){
 	floorValue= UNDEFINED_FLOOR;
 	nestValue = UNDEFINED_NEST;
 }
- // set to some logical expression later, preferrably a "We have completed the task" or I have pressed a button
-							// this may be difficult without prior knowledge of the course
-	//Right(50,150);
-
-	StartTask(DetectWall);
+*/
+	Forward(360);
+	wait1Msec(2000);
+	Right(360*3,75);
+	wait1Msec(2000);
+	Left(360*3, 75);
+	//StartTask(Wander);
+	//StartTask(DetectWall);
   //raiseArm();
 
 	//StartTask(Wander);
@@ -330,30 +309,13 @@ if(floorValue ==0 && nestValue == 0){
   //raiseArm();
   //wait10Msec(1000);
   //lowerArm();
-while(true){
-	if(wall == false)
-	{
-		StartTask(DetectWall);
-	}
-}
+//while(true){
+//	if(wall == false)
+//	{
+//		StartTask(DetectWall);
+//	}
+//}
 
- /*
-    while (!TSreadState(touchRight));
-    StopTask(PushEggTowardsNest);
-			StartTask(DetectWall);
-
-    while (!TSreadState(touchRight));
-			StopTask(DetectWall);
-			StartTask(MoveTowardsEgg);
-
-	while (!TSreadState(touchRight));
-		StopTask(MoveTowardsEgg);
-	StartTask(PushEggTowardsNest);
-
-	while (!TSreadState(touchRight));
-  StopTask(PushEggTowardsNest);
-	StartTask(Wander);
-*/
 	 // set to some logical expression later, preferrably a "We have completed the task" or I have pressed a button
 		// this may be difficult without prior knowledge of the course
 }	//StopAllTasks();

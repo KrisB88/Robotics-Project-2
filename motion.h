@@ -3,13 +3,25 @@
 
 /*BASIC FUNCTIONS-------------------------------------------------------------------- */
 //this moves the robot forwards
+
+/****************************
+	A = Right motor
+	B = Left motor
+****************************/
+
 void Forward( int length)
 {
 	nSyncedMotors=synchAB;
-	while(nMotorEncoder[leftMotor]< length){ //set to slaves later
-	motor[rightMotor] = MOTOR_MAX;
-	motor[leftMotor] = MOTOR_MAX;
+	nSyncedTurnRatio = 100;
+	nMotorEncoder[rightMotor] = 0;
+	//nMotorEncoder[leftMotor] = 0;
+
+	while( nMotorEncoder[rightMotor] < length ){ //set to slaves later
+		motor[rightMotor] = MOTOR_MAX;
+		//motor[leftMotor] = MOTOR_MAX;
 }
+	motor[rightMotor] = 0;
+	nMotorEncoder[rightMotor] = 0;
 }
 void Forward( )
 {
@@ -22,22 +34,32 @@ void Left( int length, int turnRadians)
 {
 	nSyncedMotors=synchAB;
 	nSyncedTurnRatio= turnRadians;
-	//	nxtDisplayCenteredTextLine(0, "%d",(nMotorEncoder[leftMotor]));
-	//wait10Msec(10000);
-	while(nMotorEncoder[leftMotor]<length){
-	//motor[rightMotor] = MOTOR_MIN;
-	motor[leftMotor] = MOTOR_MAX;
-}
+
+	nMotorEncoder[rightMotor] = 0;
+
+	while( nMotorEncoder[rightMotor] < length ){
+		motor[rightMotor] = MOTOR_MAX;
+	}
+
+	nMotorEncoder[rightMotor] = 0;
 }
 //this moves the robot right
 void Right( int length, int turnRadians)
 {
 	nSyncedMotors=synchBA;
 	nSyncedTurnRatio= turnRadians;
-	while(nMotorEncoder[rightMotor]<length){
-	motor[rightMotor] = MOTOR_MAX;
-	//motor[leftMotor] = MOTOR_MIN;
-}
+
+	nMotorEncoder[leftMotor] = 0;
+	//nMotorEncoder[rightMotor] = 0;
+
+	while( nMotorEncoder[leftMotor] < length ){
+		motor[leftMotor] = MOTOR_MAX;
+
+	}
+
+	motor[leftMotor] = 0;
+	nMotorEncoder[leftMotor] = 0;
+	//nMotorEncoder[rightMotor] = 0;
 }
 //this moves the robot backwards
 void Backwards( int length)
@@ -55,7 +77,7 @@ void Halt()
 	motor[leftMotor] = 0;
 }
 void raiseArm(){
-	int count=0;
+	//int count=0;
 	//while(count < 1){ //setting it to arbitrary value until can make an angle based assumption
 	while(nMotorEncoder[clawMotor]> (0-150)){
 	motor[clawMotor]= MOTOR_MIN;
