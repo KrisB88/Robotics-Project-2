@@ -63,13 +63,13 @@ task Wander()
 		int decision =random(100)%3;//%3 //explicit "don't reach the default case"
 		switch(decision){ //goes in one of the 8 directions
 			case 0:
-						Forward();
+						Forward(360*3);
 						break;
 			case 1:
-						Left(0 , 100); //pass two arguments, the length of distance traveled and the turn radius
+						Left(360*3 , 80); //pass two arguments, the length of distance traveled and the turn radius
 						break;
 			case 2:
-						Right(0 , 100);
+						Right(360*3 , 80);
 						break;
 			default:
 						nxtDisplayStringAt(5, 31, "error with random number generator");
@@ -209,8 +209,8 @@ task DetectWall()
 {
 	//wall= true;
 	nxtDisplayTextLine(6, "Wall Not Detected");
-	while( true){ //while this isn't detected, do nothing
-		if(TSreadState(touchLeft) || TSreadState(touchRight)){
+	while( TSreadState(touchLeft) || TSreadState(touchRight)); //while this isn't detected, do nothing
+
 				nxtDisplayClearTextLine(6);
 				nxtDisplayTextLine(6, "Wall Detected");
 
@@ -240,13 +240,10 @@ task DetectWall()
 				//StartTask(Wander);
 			 	nxtDisplayClearTextLine(6);
 			 	//releaseCPU();
-			 	EndTimeSlice();
-		}
-		else{
-		//DO NOTHING
-		wait10Msec(100);
-		}
-	}
+			 	StartTask(Wander);
+			 	//EndTimeSlice();
+
+
 }
 
 //this is where all the functions are called
@@ -291,13 +288,9 @@ if(floorValue ==0 && nestValue == 0){
 	nestValue = UNDEFINED_NEST;
 }
 */
-	Forward(360);
-	wait1Msec(2000);
-	Right(360*3,75);
-	wait1Msec(2000);
-	Left(360*3, 75);
-	//StartTask(Wander);
-	//StartTask(DetectWall);
+
+	StartTask(Wander);
+	StartTask(DetectWall);
   //raiseArm();
 
 	//StartTask(Wander);

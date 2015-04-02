@@ -79,20 +79,24 @@ void Halt()
 void raiseArm(){
 	//int count=0;
 	//while(count < 1){ //setting it to arbitrary value until can make an angle based assumption
-	while(nMotorEncoder[clawMotor]> (0-150)){
-	motor[clawMotor]= MOTOR_MIN;
+	nMotorEncoder[clawMotor] = 0;
+	while(nMotorEncoder[clawMotor] > (0 - 180)){
+		motor[clawMotor]= MOTOR_MIN;
 	//count++;
 	}
-	//motor[clawMotor]=0;
+	motor[clawMotor]=0;
 
 }
 void lowerArm(){
 	//int count=0;
 	//while(count < 1){ //setting it to arbitrary value until can make an angle based assumption
 nMotorEncoder[clawMotor] = 0;
-while(nMotorEncoder[clawMotor]< 150){
+
+while(nMotorEncoder[clawMotor]< 180){
 	motor[clawMotor]= MOTOR_MAX;
 	}
+
+	motor[clawMotor] = 0;
 }
 void HaltArm(){
 motor[clawMotor]=0;
