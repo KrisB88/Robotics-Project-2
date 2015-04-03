@@ -21,7 +21,7 @@ Due: 03/23/15
 #include "drivers/hitechnic-compass.h"
 #include "drivers/hitechnic-touchmux.h"
 #include "motion.h"
-//#include "music.h"
+#include "music.h"
 // Define easy names for sensors connected to multiplexer
 const tMUXSensor lightSensor = msensor_S1_4;	//Light sensor in smux port 4
 const tMUXSensor  touchRight= msensor_S1_3;	//Touch right smux port 3
@@ -31,7 +31,7 @@ const tMUXSensor ultrasonicSensor = msensor_S1_1; // Ultrasonic smux port 1
 #define MAX_DISTANCE 15
 #define UNDEFINED_FLOOR 24
 #define UNDEFINED_NEST 13
-bool  random_walk;
+bool  wall;
 //declaring motor speeds
 
 int compassReading;
@@ -56,7 +56,7 @@ task Wander()
 	//random_walk= true;
 	ClearTimer(T1);
 	//time10[T1] < 120000
-	while(time10[T1] < 120000 /*&& wall == false*/)//2 minutes
+	while( time10[T1] < 120000 )//2 minutes
 	{
 		//nMotorEncoder[leftMotor]=0; //not sure if need to reset periodically
 		//nMotorEncoder[rightMotor]=0;
@@ -75,6 +75,8 @@ task Wander()
 						nxtDisplayStringAt(5, 31, "error with random number generator");
 						wait10Msec(1000);
 						break;
+
+			EndTimeSlice();
 
 	}
 	}
@@ -134,7 +136,7 @@ task PushEggTowardsNest()
 }
 task MoveTowardsEgg()
 {
-	int distance = 5; // need to test value
+	int distance = 10; // need to test value
 	while(USreadDist(ultrasonicSensor)> MAX_DISTANCE){  // too far away to tell
 					nxtDisplayTextLine(3, "Ultra Sonic:");
 					nxtDisplayCenteredTextLine(4, "%4d" , ultrasonicSensor);
@@ -148,26 +150,26 @@ task MoveTowardsEgg()
 	StopTask(Wander);// turn off temporarily
 				nxtDisplayClearTextLine(0);
 				nxtDisplayClearTextLine(1);
-				random_walk= false;
+				//random_walk= false;
 	while(USreadDist(ultrasonicSensor) > distance ){
 		nxtDisplayCenteredTextLine(0, "Task:");
 	 	nxtDisplayCenteredTextLine(1,  "Move Towards Egg" );
 		nxtDisplayCenteredTextLine(2, "Range: %d",USreadDist(ultrasonicSensor));
 
-		Right(15,100);
+		Right(360,75);
 		int tempDistRight= USreadDist(ultrasonicSensor);
 
-		Left(15,100);
+		Left(360,75);
 		int tempDistLeft = USreadDist(ultrasonicSensor);
 		Forward();
 
 		if(tempDistRight < tempDistLeft) {
-			Right(25, 100);
+			Right(360, 75);
 
 			//wait1Msec(10);
 		}
 		else {
-			Left(25, 100);
+			Left(360, 75);
 			//wait1Msec(10);
 	}
 	nxtDisplayClearTextLine(2);
@@ -207,43 +209,41 @@ task StopAtEgg()
 //how do we tell the wall is different from the eggs?
 task DetectWall()
 {
-	//wall= true;
+	wall= true;
 	nxtDisplayTextLine(6, "Wall Not Detected");
-	while( TSreadState(touchLeft) || TSreadState(touchRight)); //while this isn't detected, do nothing
+	while( true){ //while this isn't detected, do nothing
+				if(TSreadState(touchLeft) || TSreadState(touchRight)){
 
-				nxtDisplayClearTextLine(6);
-				nxtDisplayTextLine(6, "Wall Detected");
-
-
-				StopTask(Wander);
-				//StopTask(MoveTowardsEgg);
-				//StopTask(StopAtEgg);
-				//StopTask(PushEggTowardsNest);
-				wait10Msec(50);
-
-					//Halt();
-				motor[rightMotor]=0;
-				motor[clawMotor]=0;
-				Backwards(1);
-				wait10Msec(50);
-				Right(15,150);
-				Halt();
+						nxtDisplayClearTextLine(6);
+						nxtDisplayTextLine(6, "Wall Detected");
 
 
+						StopTask(Wander);
+						StopTask(MoveTowardsEgg);
+						//StopTask(StopAtEgg);
+						//StopTask(PushEggTowardsNest);
+						wait10Msec(50);
 
-				motor[rightMotor] = 0;
-				//StartTask(Wander);
-				//StartTask(MoveTowardsEgg);
+							//Halt();
+						motor[rightMotor]=0;
+						motor[clawMotor]=0;
+						Backwards(1);
+						wait10Msec(50);
+						Right(15,75);
+						Halt();
+						//motor[rightMotor] = 0;
 
-				//wall= false;
-				//StopTask(DetectWall);
-				//StartTask(Wander);
-			 	nxtDisplayClearTextLine(6);
-			 	//releaseCPU();
-			 	StartTask(Wander);
-			 	//EndTimeSlice();
+						wall= false;
+						//StopTask(DetectWall);
+						//StartTask(Wander);
+					 	nxtDisplayClearTextLine(6);
+						StartTask(Wander);
+					 	StartTask(MoveTowardsEgg);
+						wait1Msec(5);
+			}
 
 
+}
 }
 
 //this is where all the functions are called
@@ -282,15 +282,24 @@ while (nNxtButtonPressed != 3) {
   /**********************************************************
   								Actually Start Task Here
   **********************************************************/
-  /*
+
 if(floorValue ==0 && nestValue == 0){
 	floorValue= UNDEFINED_FLOOR;
 	nestValue = UNDEFINED_NEST;
 }
-*/
+  //raiseArm();
+	//lowerArm();
+/*
+		StartTask(MoveTowardsEgg);
+		StartTask(Wander);
+		StartTask(DetectWall);
+	while(true){
+	if(wall==false){
+			StartTask(DetectWall);
+}
 
-	StartTask(Wander);
-	StartTask(DetectWall);
+}
+*/
   //raiseArm();
 
 	//StartTask(Wander);
