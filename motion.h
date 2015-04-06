@@ -23,6 +23,17 @@ void Forward( int length)
 	motor[rightMotor] = 0;
 	nMotorEncoder[rightMotor] = 0;
 }
+void oneEighty(int tempreading){
+				nSyncedMotors=synchBA;
+					nSyncedTurnRatio= 150;
+		while((tempReading + 180) %360 < HTMCsetTarget(compassSensor) - 15 || (tempReading + 180) %360 > HTMCsetTarget(compassSensor) +15){// hopefully do a 180 degree turn
+					motor[rightMotor] = MOTOR_MAX;
+					nxtDisplayCenteredTextLine(3, "Current:%4d", SensorValue[compassSensor]);
+					nxtDisplayCenteredTextLine(4, "Thing:%4d", tempreading);
+					nxtDisplayClearTextLine(3);
+				//	wait1Msec(1000);
+			}
+}
 void Forward( )
 {
 		//nSyncedMotors=synchAB;
@@ -80,7 +91,7 @@ void raiseArm(){
 	//int count=0;
 	//while(count < 1){ //setting it to arbitrary value until can make an angle based assumption
 	nMotorEncoder[clawMotor] = 0;
-	while(nMotorEncoder[clawMotor] > (0 - 180)){
+	while(nMotorEncoder[clawMotor] > (0 - 220)){
 		motor[clawMotor]= MOTOR_MIN;
 	//count++;
 	}
@@ -92,7 +103,7 @@ void lowerArm(){
 	//while(count < 1){ //setting it to arbitrary value until can make an angle based assumption
 nMotorEncoder[clawMotor] = 0;
 
-while(nMotorEncoder[clawMotor]< 180){
+while(nMotorEncoder[clawMotor]< 220){
 	motor[clawMotor]= MOTOR_MAX;
 	}
 

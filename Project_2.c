@@ -1,5 +1,6 @@
 #pragma config(Sensor, S1,     HTSMUX,         sensorI2CCustom)
 #pragma config(Sensor, S2,     compassSensor,  sensorI2CCustom)
+#pragma config(Sensor, S4,     sonarSensor,         sensorSONAR)
 #pragma config(Motor,  motorA,          rightMotor,    tmotorNXT, PIDControl, encoder)
 #pragma config(Motor,  motorB,          leftMotor,     tmotorNXT, PIDControl, encoder)
 #pragma config(Motor,  motorC,          clawMotor,     tmotorNXT, PIDControl, encoder)
@@ -26,12 +27,13 @@ Due: 03/23/15
 const tMUXSensor lightSensor = msensor_S1_4;	//Light sensor in smux port 4
 const tMUXSensor  touchRight= msensor_S1_3;	//Touch right smux port 3
 const tMUXSensor  touchLeft = msensor_S1_2; //Touch left smux port 2
-const tMUXSensor ultrasonicSensor = msensor_S1_1; // Ultrasonic smux port 1
+//const tMUXSensor ultrasonicSensor = msensor_S1_1; // Ultrasonic smux port 1
 
-#define MAX_DISTANCE 15
+#define MAX_DISTANCE 35
 #define UNDEFINED_FLOOR 24
 #define UNDEFINED_NEST 13
 bool  wall;
+bool egg;
 //declaring motor speeds
 
 int compassReading;
@@ -61,15 +63,16 @@ task Wander()
 		//nMotorEncoder[leftMotor]=0; //not sure if need to reset periodically
 		//nMotorEncoder[rightMotor]=0;
 		int decision =random(100)%3;//%3 //explicit "don't reach the default case"
+		Halt();
 		switch(decision){ //goes in one of the 8 directions
 			case 0:
-						Forward(360*3);
+						Forward(5);
 						break;
 			case 1:
-						Left(360*3 , 80); //pass two arguments, the length of distance traveled and the turn radius
+						Left(5 , 80); //pass two arguments, the length of distance traveled and the turn radius
 						break;
 			case 2:
-						Right(360*3 , 80);
+						Right(5 , 80);
 						break;
 			default:
 						nxtDisplayStringAt(5, 31, "error with random number generator");
@@ -100,15 +103,16 @@ task PushEggTowardsNest()
 					nxtDisplayCenteredTextLine(2, "performing 180 degree turn");
 					nSyncedMotors=synchBA;
 					nSyncedTurnRatio= 150;
-		while((compassReading + 180) %360 != HTMCsetTarget(compassSensor)){// hopefully do a 180 degree turn
-					motor[rightMotor] = MOTOR_MAX;
+		while((compassReading + 180) %360 < HTMCsetTarget(compassSensor) - 15 || (compassReading + 180) %360 > HTMCsetTarget(compassSensor) +15){// hopefully do a 180 degree turn
+					motor[rightMotor] = 48;
 					nxtDisplayCenteredTextLine(3, "Current:%4d", HTMCsetTarget(compassSensor));
 					nxtDisplayCenteredTextLine(4, "Home:%4d", compassReading);
-					nxtDisplayClearTextLine(3);
-				//	wait1Msec(1000);
+					//nxtDisplayClearTextLine(3);
+
+					//wait10Msec(10);
 			}
-			//Halt();
-			motor[rightMotor] =0;
+			Halt();
+			//motor[rightMotor] =0;
 			nxtDisplayClearTextLine(2);
 			nxtDisplayClearTextLine(3);
 			nxtDisplayClearTextLine(4);
@@ -120,7 +124,7 @@ task PushEggTowardsNest()
 					nxtDisplayCenteredTextLine(2, "Current: %4d", currentFloor);
 					nxtDisplayTextLine(3, "Nest Value: %4d", nestValue);
 					nxtDisplayTextLine(4, "Floor Value: %4d", floorValue);
-					Forward();
+					Forward(360);
 
 				 	currentFloor =LSvalNorm(lightSensor);
 			}
@@ -129,51 +133,64 @@ task PushEggTowardsNest()
 
 			raiseArm();
 
-			Right(15, 100);
+			Right(360*2, 5);
+			Halt();
 			HaltArm();
+			egg = false;
+			oneEighty(HTMCsetTarget(compassSensor));
 			StartTask(Wander);
 
 }
 task MoveTowardsEgg()
 {
+
+
 	int distance = 10; // need to test value
-	while(USreadDist(ultrasonicSensor)> MAX_DISTANCE){  // too far away to tell
+	while(SensorValue[sonarSensor] > MAX_DISTANCE){  // too far away to tell
 					nxtDisplayTextLine(3, "Ultra Sonic:");
-					nxtDisplayCenteredTextLine(4, "%4d" , ultrasonicSensor);
+					nxtDisplayCenteredTextLine(4, "%4d" ,SensorValue[sonarSensor]);
 					//wait1Msec(1000);
 					nxtDisplayClearTextLine(3);
 					nxtDisplayClearTextLine(4);
 
 }
 	Halt();
-	wait1Msec(200);
+
+	wait1Msec(2000);
+
 	StopTask(Wander);// turn off temporarily
 				nxtDisplayClearTextLine(0);
 				nxtDisplayClearTextLine(1);
 				//random_walk= false;
-	while(USreadDist(ultrasonicSensor) > distance ){
+	while(SensorValue[sonarSensor] > distance ){
 		nxtDisplayCenteredTextLine(0, "Task:");
 	 	nxtDisplayCenteredTextLine(1,  "Move Towards Egg" );
-		nxtDisplayCenteredTextLine(2, "Range: %d",USreadDist(ultrasonicSensor));
+		nxtDisplayCenteredTextLine(2, "Range: %d",SensorValue[sonarSensor]);
 
-		Right(360,75);
-		int tempDistRight= USreadDist(ultrasonicSensor);
-
-		Left(360,75);
-		int tempDistLeft = USreadDist(ultrasonicSensor);
-		Forward();
-
+		Right(180,15);
+		int tempDistRight= SensorValue[sonarSensor];
+		Halt();
+		Left(180,15);
+		int tempDistLeft =SensorValue[sonarSensor];
+		Halt();
+		//Forward(180);
+		//Halt();
+		if(SensorValue[sonarSensor] ==255){
+			break;
+		}
 		if(tempDistRight < tempDistLeft) {
-			Right(360, 75);
-
-			//wait1Msec(10);
+			Right(180, 15);
+				Halt();
+			wait1Msec(10);
 		}
 		else {
-			Left(360, 75);
-			//wait1Msec(10);
+			Left(180, 15);
+			Halt();
+			wait1Msec(10);
 	}
-	nxtDisplayClearTextLine(2);
+
 	wait1Msec(15); // might be a problem with the updates
+	nxtDisplayClearTextLine(2);
 }
 	//lowerArm();
 	nxtDisplayClearTextLine(0);
@@ -190,16 +207,18 @@ task StopAtEgg()
 		nxtDisplayCenteredTextLine(0, "Task:");
 	 	nxtDisplayCenteredTextLine(1, "Stop At Egg" );
 		nxtDisplayCenteredTextLine(2, "Lowering Arm" );
-	//symph5();
+	symph5();
 
-	wait1Msec(1000);
+	//wait1Msec(1000);
+	Halt();
 	lowerArm();
 
-	//egg=true;// assume it was sucessful for now
+
 	nxtDisplayClearTextLine(0);
 	nxtDisplayClearTextLine(1);
 	nxtDisplayClearTextLine(2);
 	StartTask(PushEggTowardsNest);
+	egg = true;
 }
 
 
@@ -211,25 +230,29 @@ task DetectWall()
 {
 	wall= true;
 	nxtDisplayTextLine(6, "Wall Not Detected");
-	while( true){ //while this isn't detected, do nothing
-				if(TSreadState(touchLeft) || TSreadState(touchRight)){
+	while(!TSreadState(touchLeft) && !TSreadState(touchRight));  //while this isn't detected, do nothing
+
 
 						nxtDisplayClearTextLine(6);
 						nxtDisplayTextLine(6, "Wall Detected");
 
-
+					if(egg ==false){
 						StopTask(Wander);
 						StopTask(MoveTowardsEgg);
-						//StopTask(StopAtEgg);
-						//StopTask(PushEggTowardsNest);
+						}
+						else{
+						StopTask(PushEggTowardsNest);
+						}
 						wait10Msec(50);
 
 							//Halt();
 						motor[rightMotor]=0;
 						motor[clawMotor]=0;
-						Backwards(1);
-						wait10Msec(50);
-						Right(15,75);
+						Backwards(180);
+						//wait10Msec(50);
+						//int tempreading =HTMCsetTarget(compassSensor);
+						//oneEighty ( tempreading);
+						Right(360,5);
 						Halt();
 						//motor[rightMotor] = 0;
 
@@ -237,13 +260,17 @@ task DetectWall()
 						//StopTask(DetectWall);
 						//StartTask(Wander);
 					 	nxtDisplayClearTextLine(6);
+					 	if (egg == false){
 						StartTask(Wander);
-					 	StartTask(MoveTowardsEgg);
+					 	StartTask(MoveTowardsEgg);}
+					 	else {
+					 StartTask(PushEggTowardsNest);
+					}
 						wait1Msec(5);
-			}
 
 
-}
+
+
 }
 
 //this is where all the functions are called
@@ -262,23 +289,26 @@ task main()
 /*************************************************************
 									Get the Compass Value
 **************************************************************/
-/*
+
 while (nNxtButtonPressed != 3) {
 	 // The enter button has been pressed, switch
     // to the other mode
     //nxtDisplayClearTextLine(0);
-    nxtDisplayClearTextLine(1);
+    nxtDisplayClearTextLine(4);
     compassReading = HTMCsetTarget(compassSensor);// could use the "Norm value" too
     nxtDisplayTextLine(0, "Lego");
     nxtDisplayTextLine(1, "Compass Value:" );
-    nxtDisplayTextLine(2, "\t %4d", compassReading);
+    nxtDisplayCenteredTextLine(2, "%4d", compassReading);
+     nxtDisplayCenteredTextLine(4, "%4d" , SensorValue[sonarSensor]);
+
+    //nxtDisplayCenteredTextLine(4, "%4d" , ultrasonicSensor);
      wait1Msec(25);
   }
   wait1Msec(2000);
     nxtDisplayClearTextLine(0);
     nxtDisplayClearTextLine(1);
     nxtDisplayClearTextLine(2);
-*/
+
   /**********************************************************
   								Actually Start Task Here
   **********************************************************/
@@ -289,34 +319,17 @@ if(floorValue ==0 && nestValue == 0){
 }
   //raiseArm();
 	//lowerArm();
-/*
-		StartTask(MoveTowardsEgg);
-		StartTask(Wander);
-		StartTask(DetectWall);
+StartTask(PushEggTowardsNest);
+	//StartTask(MoveTowardsEgg);
+	//StartTask(Wander);
+	//StartTask(DetectWall);
 	while(true){
 	if(wall==false){
-			StartTask(DetectWall);
+		StartTask(DetectWall);
 }
 
 }
-*/
-  //raiseArm();
 
-	//StartTask(Wander);
-	//wait10Msec(5);
-	//StartTask(MoveTowardsEgg);
-	//wait10Msec(5);
-
-  //StartTask(PushEggTowardsNest);
-  //raiseArm();
-  //wait10Msec(1000);
-  //lowerArm();
-//while(true){
-//	if(wall == false)
-//	{
-//		StartTask(DetectWall);
-//	}
-//}
 
 	 // set to some logical expression later, preferrably a "We have completed the task" or I have pressed a button
 		// this may be difficult without prior knowledge of the course
