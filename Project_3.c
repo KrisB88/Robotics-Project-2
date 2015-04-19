@@ -19,7 +19,19 @@ Due: 03/23/15
 #include "drivers/lego-ultrasound.h"
 #include "motion.h"
 
+#define ROW 8
+#define COL 16
 
+int worldArray[8][16] ={{2,0,0,0,0,0,0,0,1,0,0,0,1,1,1,1},
+							{0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0},
+							{0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0},
+							{0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0},
+							{0,0,0,1,1,1,1,0,0,0,0,0,1,0,0,0},
+							{0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0},
+							{0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0},
+							{0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0}};
+
+void WavefrontSearch( int goal_x, int goal_y);
 task main()
 {
 
@@ -32,7 +44,55 @@ task main()
 	wait1Msec(1000);
 	Forward(dist);
 	wait1Msec(1000);
-	Forward(dist;
+	Forward(dist);
 	 // set to some logical expression later, preferrably a "We have completed the task" or I have pressed a button
 		// this may be difficult without prior knowledge of the course
 }	//StopAllTasks();
+
+
+void WavefrontSearch(  int goal_x, int goal_y)
+{
+ //int goal_x, goal_y, goal;
+  bool foundWave = true;
+  int currentWave = 2; //Looking for goal first
+
+
+  worldArray[goal_x][goal_y] = 98; //set goal
+  int goal = 98;
+
+  while(foundWave == true)
+  {
+    foundWave = false;
+    for(int y=0; y < COL; y++)
+    {
+      for(int x=0; x < ROW; x++)
+      {
+        if(worldArray[x][y] == currentWave)
+        {
+          foundWave = true;
+          goal_x = x;
+          goal_y = y;
+
+		  if(goal_x > 0) //This code checks the worldArray bounds heading WEST
+            if(worldArray[goal_x-1][goal_y] == 0)  //This code checks the WEST direction
+              worldArray[goal_x-1][goal_y] = currentWave + 1;
+
+          if(goal_x < (ROW - 1)) //This code checks the worldArray bounds heading EAST
+            if(worldArray[goal_x+1][goal_y] == 0)//This code checks the EAST direction
+              worldArray[goal_x+1][goal_y] = currentWave + 1;
+
+          if(goal_y > 0)//This code checks the worldArray bounds heading SOUTH
+            if(worldArray[goal_x][goal_y-1] == 0) //This code checks the SOUTH direction
+              worldArray[goal_x][goal_y-1] = currentWave + 1;
+
+          if(goal_y < (COL - 1))//This code checks the worldArray bounds heading NORTH
+            if(worldArray[goal_x][goal_y+1] == 0) //This code checks the NORTH direction
+              worldArray[goal_x][goal_y+1] = currentWave + 1;
+        }
+      }
+    }
+    currentWave++;
+  }
+
+
+}
