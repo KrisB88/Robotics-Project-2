@@ -40,11 +40,8 @@ task main()
 	nMotorEncoder[rightMotor]=0;
 	nMotorEncoder[clawMotor]=0;
 	int dist = 300;
-	Forward(dist);
-	wait1Msec(1000);
-	Forward(dist);
-	wait1Msec(1000);
-	Forward(dist);
+	//Forward(dist);
+	Right(170, -100);
 	 // set to some logical expression later, preferrably a "We have completed the task" or I have pressed a button
 		// this may be difficult without prior knowledge of the course
 }	//StopAllTasks();
@@ -57,8 +54,8 @@ void WavefrontSearch(  int goal_x, int goal_y)
   int currentWave = 2; //Looking for goal first
 
 
-  worldArray[goal_x][goal_y] = 98; //set goal
-  int goal = 98;
+  worldArray[goal_x][goal_y] = 2; //set goal
+
 
   while(foundWave == true)
   {
