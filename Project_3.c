@@ -45,6 +45,7 @@ task main()
 	//initialize because junk values are a thing
 	nMotorEncoder[leftMotor]=0;
 	nMotorEncoder[rightMotor]=0;
+<<<<<<< HEAD
 	int dist = 565; // Approximately one square
 	int turnDist = 221;
 
@@ -258,6 +259,12 @@ task main()
 
 	}
 
+=======
+	nMotorEncoder[clawMotor]=0;
+	int dist = 300;
+	//Forward(dist);
+	Right(170, -100);
+>>>>>>> origin/master
 	 // set to some logical expression later, preferrably a "We have completed the task" or I have pressed a button
 		// this may be difficult without prior knowledge of the course
 }	//StopAllTasks();
@@ -269,9 +276,15 @@ void WavefrontSearch(  int goal_x, int goal_y)
   bool foundWave = true;
   int currentWave = 2; //Looking for goal first
 
+<<<<<<< HEAD
 	nxtDisplayCenteredTextLine(1, "Wave Front Start");
   worldArray[goal_x][goal_y] = 98; //set goal
   int goal = 98;
+=======
+
+  worldArray[goal_x][goal_y] = 2; //set goal
+
+>>>>>>> origin/master
 
   while(foundWave == true)
   {
