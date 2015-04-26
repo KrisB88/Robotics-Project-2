@@ -31,7 +31,7 @@ int main(){
 							{0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0},
 							{0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0},
 							{0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0}};
-	
+
 	//WORLD #2 for testing
 	//int worldArray[8][16] ={{2,0,0,0,0,0,0,1,1,1,1,0,0,1,0,0},
 	//						{0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0},
@@ -82,21 +82,21 @@ int main(){
 	}
 
 
-//To plan an optimal path, you start at the goal, and at every point, until 
-		//you've reached the goal, you pick the next cell that has the minimum 
-		//value of all adjacent cells. For example, one good path from S to G 
-		//(with each cell represented by its x,y Cartesian coordinates, starting 
+//To plan an optimal path, you start at the goal, and at every point, until
+		//you've reached the goal, you pick the next cell that has the minimum
+		//value of all adjacent cells. For example, one good path from S to G
+		//(with each cell represented by its x,y Cartesian coordinates, starting
 		//at 0,0 in the lower-left corner):
 
 	cout << endl;
 	cout << endl;
-	struct xy currLocation; 
+	struct xy currLocation;
 	currLocation.x=0;
 	currLocation.y=0;
-	
+
 	int distance = 0;
 	int currentVal = worldArray[x][y];
-	
+
 	int currFace = SOUTH;
 
 	 while(currLocation.x !=3 && currLocation.y != 15 )
@@ -105,7 +105,7 @@ int main(){
 
 				//if goalx goaly+1 != 1 && > curr val
 			  // move right, chg prev 99, inc pathcount
-			 
+
 			if ( (worldArray[x][y + 1] > currentVal) && worldArray[x][y + 1] != 1  && y != 0) //this direction is SOUTH
 			  {
 				  currentVal = worldArray[x][y + 1];
@@ -159,8 +159,8 @@ int main(){
 				 /* pathArray[distance].x=x;
 				  pathArray[distance].y=y;*/
 				  distance ++;
-			  } 
-			
+			  }
+
 				//if [goalx -1][ y] != 1 && > current val && if the row is not 0 (to keep in bounds)
 			  // move up, change prev to 99, increment pathcount
 			  else if( (worldArray[x - 1][y] > currentVal) && worldArray[x -1][y] != 1  && x != 0) // this direction is WEST
@@ -219,11 +219,11 @@ int main(){
 				  pathArray[distance].y=y;*/
 				  distance ++;
 			  }
-			  		
-			 
-			  
+
+
+
 	}
-	  
+
 
 
 
@@ -232,7 +232,7 @@ int main(){
 	 //while(currentVal != 2 )
 		// {
 		//	 // //setting currentVal to the goal spot
-		//	 
+		//
 
 		//	  //if [goalx -1][ y] != 1 && < current val && if the row is not 0 (to keep in bounds)
 		//	  // move up, change prev to 99, increment pathcount
@@ -241,8 +241,7 @@ int main(){
 		//		  currentVal = worldArray[x - 1][y];
 		//		  x = (x - 1);
 		//		  worldArray[x][y] = 98;
-		//		 pathArray[distance].x=x;
-		//		 pathArray[distance].y=y;
+		//
 		//		 distance ++;
 
 
@@ -254,22 +253,20 @@ int main(){
 		//		  currentVal = worldArray[x][y - 1];
 		//		  y = (y - 1);
 		//		  worldArray[x][y] = 98;
-		//		  pathArray[distance].x=x;
-		//		  pathArray[distance].y=y;
+
 		//		  distance ++;
 		//	  }
 		//	    //if goalx+1 goaly != 1 && < curr val
 		//	  // move down, chg prev 99, inc pathcount
-		//	
+		//
 		//	  else if ( (worldArray[x + 1][y] < currentVal) && worldArray[x + 1][y] != 1  && y != 0)
 		//	  {
 		//		  currentVal = worldArray[x + 1][y];
 		//		  x = (x + 1);
 		//		  worldArray[x][y] = 98;
-		//		  pathArray[distance].x=x;
-		//		  pathArray[distance].y=y;
+
 		//		  distance ++;
-		//	  } 
+		//	  }
 		//	  //if goalx goaly+1 != 1 && < curr val
 		//	  // move right, chg prev 99, inc pathcount
 		//	  else if ( (worldArray[x][y + 1] < currentVal) && worldArray[x][y + 1] != 1  && y != 0)
@@ -277,24 +274,23 @@ int main(){
 		//		  currentVal = worldArray[x][y + 1];
 		//		  y = (y + 1);
 		//		  worldArray[x][y] = 98;
-		//		  pathArray[distance].x=x;
-		//		  pathArray[distance].y=y;
+
 		//		  distance ++;
 		//	  }
 	 //}
-	 // 
+	 //
 
-	 
+
 	 	cout << "The Path array is: " << endl;
 		/*for( int i = (distance-1); i >= 0; i--){
 			cout << pathArray[i].x <<" " << pathArray[i].y << endl;*/
-			
+
 	/*}*/
 		cout << endl;
 		cout << endl;
 
 
-	 
+
 	 	cout << "The Path is: ";
 		for( int i = 0; i < ROW; i++){
 			//cout << endl;
@@ -302,7 +298,7 @@ int main(){
 				if ( worldArray[i][j] == 98 )
 				{
 					cout << "(" << i << ", " << j << "),";
-					
+
 				}
 
 		}
@@ -319,7 +315,7 @@ void WavefrontSearch( int array[8][16], int goal_x, int goal_y)
  //int goal_x, goal_y, goal;
   bool foundWave = true;
   int currentWave = 2; //Looking for goal first
-  
+
 
   array[goal_x][goal_y] = 98; //set goal
   int goal = 98;
@@ -336,19 +332,19 @@ void WavefrontSearch( int array[8][16], int goal_x, int goal_y)
           foundWave = true;
           goal_x = x;
           goal_y = y;
-		  
+
 		  if(goal_x > 0) //This code checks the array bounds heading WEST
             if(array[goal_x-1][goal_y] == 0)  //This code checks the WEST direction
               array[goal_x-1][goal_y] = currentWave + 1;
- 
+
           if(goal_x < (ROW - 1)) //This code checks the array bounds heading EAST
             if(array[goal_x+1][goal_y] == 0)//This code checks the EAST direction
               array[goal_x+1][goal_y] = currentWave + 1;
- 
+
           if(goal_y > 0)//This code checks the array bounds heading SOUTH
             if(array[goal_x][goal_y-1] == 0) //This code checks the SOUTH direction
               array[goal_x][goal_y-1] = currentWave + 1;
- 
+
           if(goal_y < (COL - 1))//This code checks the array bounds heading NORTH
             if(array[goal_x][goal_y+1] == 0) //This code checks the NORTH direction
               array[goal_x][goal_y+1] = currentWave + 1;
