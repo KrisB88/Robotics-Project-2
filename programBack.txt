@@ -65,13 +65,12 @@ task main()
 	int y = 0;
 	int distance = 0;
 	int currentVal = worldArray[x][y];
-	int finalx= 5;
-	int finaly= 13;
+
 	int currFace = SOUTH;
-	WavefrontSearch(finalx,finaly);
-//	printMap();
+	WavefrontSearch(3,15);
+	//printMap();
 //while(1);
-	 while(!((x ==finalx )&& (y == finaly)) )
+	 while(!((x ==3 )&& (y == 15)) )
  {
 			 // //setting currentVal to the goal spot
 
@@ -239,8 +238,7 @@ void WavefrontSearch(  int goal_x, int goal_y)
   bool foundWave = true;
   int currentWave = 2; //Looking for goal first
 
-int gx2=5;
-int gy2=13;
+
 	nxtDisplayCenteredTextLine(1, "Wave Front Start");
   worldArray[goal_x][goal_y] = 98; //set goal
   int goal = 98;
@@ -282,8 +280,8 @@ int gy2=13;
     }//endif
     currentWave++;
   }//endwhile
-	int x= gx2;
-  int y= gy2;
+	int x= goal_x;
+  int y= goal_y;
   int currentVal = worldArray[x][y];
   int distance =0;
   while(currentVal != 2 )
@@ -314,7 +312,7 @@ int gy2=13;
 			    //if goalx+1 goaly != 1 && < curr val
 			  // move down, chg prev 99, inc pathcount
 
-			  else if ( x < (ROW-1) &&(worldArray[x + 1][y] < currentVal) && worldArray[x + 1][y] != 1  ){
+			  else if ( x < ROW &&(worldArray[x + 1][y] < currentVal) && worldArray[x + 1][y] != 1  ){
 			  currentVal = worldArray[x + 1][y];
 			  x = (x + 1);
 			  worldArray[x][y] = 98;
@@ -323,7 +321,7 @@ int gy2=13;
 		  }
 		  //if goalx goaly+1 != 1 && < curr val
 		  // move right, chg prev 99, inc pathcount
-		  else if ( y < (COL-1) &&(worldArray[x][y + 1] < currentVal) && worldArray[x][y + 1] != 1  ){
+		  else if ( y < COL &&(worldArray[x][y + 1] < currentVal) && worldArray[x][y + 1] != 1  ){
 			  currentVal = worldArray[x][y + 1];
 			  y = (y + 1);
 			  worldArray[x][y] = 98;
@@ -343,7 +341,7 @@ void printMap(){
 	src = src + (char) ('0' + 2);*/
 	nxtDisplayTextLine(0,"THE MAP");
 	for( int i = 0; i < ROW; i++){
-			for(int j = 11; j < COL; j++){
+			for(int j = 10; j < COL; j++){
 				if( worldArray[i][j] -10 < 0){
 				src = src + (char ) ('0' + worldArray[i][j]);
 				src = src + "  ";

@@ -28,25 +28,25 @@ Due: 04/29/15
 #define EAST 4
 
 //world 1
-int worldArray[8][16] =
-						{{2,0,0,0,0,0,0,0,1,0,0,0,1,1,1,1},
-							{0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0},
-							{0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0},
-							{0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0},
-							{0,0,0,1,1,1,1,0,0,0,0,0,1,0,0,0},
-							{0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0},
-							{0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0},
-							{0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0}};
+//int worldArray[8][16] =
+//						{{2,0,0,0,0,0,0,0,1,0,0,0,1,1,1,1},
+//							{0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0},
+//							{0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0},
+//							{0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0},
+//							{0,0,0,1,1,1,1,0,0,0,0,0,1,0,0,0},
+//							{0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0},
+//							{0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0},
+//							{0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0}};
 							//world 2
-							//int worldArray[8][16] =
-							//{{2,0,0,0,0,0,0,1,1,1,1,0,0,1,0,0},
-							//{0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0},
-							//{0,0,0,0,0,0,1,1,1,1,0,0,0,1,0,0},
-							//{0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0},
-							//{0,0,0,1,1,1,1,0,0,1,0,0,0,0,0,0},
-							//{0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0},
-							//{0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0},
-							//{0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0}};
+							int worldArray[8][16] =
+							{{2,0,0,0,0,0,0,1,1,1,1,0,0,1,0,0},
+							{0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0},
+							{0,0,0,0,0,0,1,1,1,1,0,0,0,1,0,0},
+							{0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0},
+							{0,0,0,1,1,1,1,0,0,1,0,0,0,0,0,0},
+							{0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0},
+							{0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0},
+							{0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0}};
 void printMap();
 void WavefrontSearch( int goal_x, int goal_y);
 task main()
@@ -65,12 +65,12 @@ task main()
 	int y = 0;
 	int distance = 0;
 	int currentVal = worldArray[x][y];
-	int finalx= 5;
-	int finaly= 13;
+	int finalx= 2;
+	int finaly= 15;
 	int currFace = SOUTH;
 	WavefrontSearch(finalx,finaly);
-//	printMap();
-//while(1);
+	//printMap();
+	//while(1);
 	 while(!((x ==finalx )&& (y == finaly)) )
  {
 			 // //setting currentVal to the goal spot
@@ -239,10 +239,10 @@ void WavefrontSearch(  int goal_x, int goal_y)
   bool foundWave = true;
   int currentWave = 2; //Looking for goal first
 
-int gx2=5;
-int gy2=13;
+int gx2=goal_x;
+int gy2=goal_y;
 	nxtDisplayCenteredTextLine(1, "Wave Front Start");
-  worldArray[goal_x][goal_y] = 98; //set goal
+
   int goal = 98;
 
 
@@ -282,10 +282,14 @@ int gy2=13;
     }//endif
     currentWave++;
   }//endwhile
+
+
 	int x= gx2;
   int y= gy2;
   int currentVal = worldArray[x][y];
+  worldArray[x][y] = 98; //set goal
   int distance =0;
+
   while(currentVal != 2 )
 		 {
 			 //setting currentVal to the goal spot

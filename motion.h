@@ -11,33 +11,20 @@
 
 void Forward( int length)
 {
-
-<<<<<<< HEAD
-	nMotorEncoder[rightMotor] = 0;
-	nMotorEncoder[leftMotor] = 0;
-	while( nMotorEncoder[rightMotor] < length ){ //set to slaves later
-		motor[rightMotor] = MOTOR_MAX;
-		motor[leftMotor] = MOTOR_MAX * 1.01;
-=======
-	nMotorPIDSpeedCtrl[leftMotor] = mtrSpeedReg;
-	nMotorPIDSpeedCtrl[rightMotor] = mtrSpeedReg;
-
-
-
 	//nSyncedMotors=synchBA;
 	//nSyncedTurnRatio = 100;
 	nMotorEncoder[leftMotor] = 0;
 	nMotorEncoder[rightMotor] = 0;
 	int mSpd = 0;
-	while( nMotorEncoder[leftMotor] < length ){ //set to slaves later
+	while( nMotorEncoder[rightMotor] < length ){ //set to slaves later
 		/*motor[leftMotor] = mSpd;
 		if (mSpd < MOTOR_MAX)
 			mSpd = mSpd + 1;
 		//motor[leftMotor] = MOTOR_MAX - .35;
 			*/
-		motor[leftMotor] = MOTOR_MAX;
+		motor[leftMotor] = MOTOR_MAX*1.011;
 		motor[rightMotor] = MOTOR_MAX;
->>>>>>> origin/master
+
 }
 	motor[leftMotor] = 0;
 	motor[rightMotor] = 0;
